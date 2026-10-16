@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIOSH - Corporate Admin Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f4f6f9; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* --- Header Navigation Banner --- */
+        .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
+        
+        /* --- Notification Bell & Dropdown Layout --- */
+        .icon-btn { background: none; border: none; cursor: pointer; font-size: 20px; position: relative; color: #555555; padding: 5px; }
+        .notification-badge { position: absolute; top: -2px; right: -2px; background-color: #FF0000; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; }
+        .notif-panel { position: absolute; top: 60px; right: 140px; background: #ffffff; border: 1px solid #e0e0e0; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-radius: 4px; display: none; width: 320px; z-index: 200; max-height: 400px; overflow-y: auto; }
+        .notif-header { padding: 12px 15px; font-size: 12px; font-weight: 700; color: #00008F; border-bottom: 1px solid #eeeeee; text-transform: uppercase; background: #f8f9fa; }
+        .notif-item { padding: 12px 15px; font-size: 13px; border-bottom: 1px solid #f5f5f5; color: #444444; line-height: 1.4; }
+        .notif-item strong { color: #111111; }
+        .notif-empty { padding: 20px; text-align: center; color: #888888; font-style: italic; font-size: 13px; }
+
+        /* --- Profile Overlay Panels --- */
+        .avatar { width: 35px; height: 35px; background-color: #00008F; color: #ffffff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .profile-menu { display: flex; align-items: center; gap: 10px; border-left: 1px solid #e0e0e0; padding-left: 20px; cursor: pointer; }
+        .profile-info { display: flex; flex-direction: column; }
+        .profile-name { font-size: 13px; font-weight: 600; color: #111111; }
+        .profile-meta { font-size: 11px; color: #777777; }
+        .dropdown-panel { position: absolute; top: 60px; right: 0; background: #ffffff; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; display: none; min-width: 150px; z-index: 200; overflow: hidden; }
+        .dropdown-item { padding: 12px 20px; font-size: 13px; color: #333333; text-decoration: none; display: block; background: none; border: none; width: 100%; text-align: left; cursor: pointer; }
+        .dropdown-item:hover { background-color: #f5f5f5; }
+        /* --- Grid Structure Container Layouts --- */
+        .main-container { max-width: 1600px; width: 100%; margin: 30px auto; padding: 0 30px; flex-grow: 1; display: flex; flex-direction: column; gap: 25px; }
+        .welcome-row { background-color: #ffffff; padding: 20px 30px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 4px solid #00008F; }
+        .welcome-row h2 { font-size: 22px; color: #111111; }
+
+        /* --- Visual Summary Metrics Dashboard Charts --- */
+        .metrics-grid-wrapper { 
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); /* Creates 3 perfectly equal columns side-by-side */
+    gap: 20px; 
+    width: 100%;
+}
+        .metric-card { background: #ffffff; padding: 25px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; justify-content: space-between; }
+        .metric-card h4 { font-size: 14px; font-weight: 700; color: #555555; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px; }
+        .metric-description { font-size: 12px; color: #666666; margin-bottom: 15px; line-height: 1.4; }
+        
+        /* Compliance Gauge Meter Layout */
+        .gauge-chart-container { display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; height: 100%; padding-top: 10px; }
+        .gauge-svg { width: 200px; height: 100px; }
+        .gauge-bg { fill: none; stroke: #e9ecef; stroke-width: 20; stroke-linecap: round; }
+        .gauge-fill { fill: none; stroke: #2b8a3e; stroke-width: 20; stroke-linecap: round; stroke-dasharray: 282.7; stroke-dashoffset: 282.7; transition: stroke-dashoffset 0.5s ease; }
+        .gauge-value-text { font-size: 28px; font-weight: 800; color: #111111; margin-top: 10px; }
+        .gauge-statement-sub { font-size: 12px; color: #666666; font-weight: 600; text-align: center; margin-top: 5px; background: #f8f9fa; padding: 6px 12px; border-radius: 4px; border: 1px solid #eee; }
+
+        /* Bar Chart Layout Matrix */
+        .bar-chart-container { display: flex; flex-direction: column; gap: 14px; width: 100%; justify-content: center; }
+        .bar-row { display: grid; grid-template-columns: 120px 1fr 60px; align-items: center; gap: 15px; }
+        .bar-label { font-size: 13px; font-weight: 700; color: #444444; text-align: right; }
+        .bar-track { background: #e9ecef; height: 24px; border-radius: 4px; overflow: hidden; display: flex; }
+        .bar-segment { height: 100%; transition: width 0.4s ease; display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: bold; }
+        .bg-approved { background-color: #2b8a3e; }
+        .bg-pending { background-color: #f59f00; }
+        .bg-declined { background-color: #c92a2a; }
+        .bar-total-count { font-size: 13px; font-weight: 600; color: #666666; }
+        /* --- Toolbar Controls Panel --- */
+        .control-panel { background: #ffffff; padding: 20px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 15px; }
+        .toolbar-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 11px; font-weight: 700; color: #666666; text-transform: uppercase; }
+        .form-control { padding: 8px 12px; border: 1px solid #cccccc; border-radius: 4px; font-size: 13px; outline: none; min-width: 150px; background-color: #fff; }
+        .form-control:focus { border-color: #00008F; }
+        .column-select-box { display: flex; flex-wrap: wrap; gap: 12px; background: #f8f9fa; padding: 12px; border-radius: 4px; border: 1px dashed #dddddd; }
+        .checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #444444; cursor: pointer; }
+
+        /* --- Dynamic Grid Matrix Table --- */
+        .dashboard-section { background-color: #ffffff; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; }
+        .section-header { padding: 20px 30px; border-bottom: 1px solid #eeeeee; }
+        .section-header h3 { font-size: 16px; font-weight: 700; color: #00008F; text-transform: uppercase; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background-color: #f8f9fa; color: #555555; font-weight: 600; padding: 15px 20px; border-bottom: 2px solid #eeeeee; font-size: 11px; letter-spacing: 0.5px; cursor: pointer; user-select: none; text-transform: uppercase; }
+        th:hover { background-color: #f0f1f2; color: #00008F; }
+        td { padding: 15px 20px; border-bottom: 1px solid #eeeeee; color: #333333; vertical-align: middle; white-space: pre-wrap; }
+        tr:hover td { background-color: #fcfcfc; }
+        .hidden-col { display: none !important; }
+        
+        /* --- Status Badge Modifiers --- */
+        .status-badge { padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; text-align: center; }
+        .status-pending { background-color: #fff9db; color: #f59f00; border: 1px solid #ffe3e3; }
+        .status-approved { background-color: #ebfbee; color: #2b8a3e; border: 1px solid #d3f9d8; }
+        .status-declined { background-color: #fff5f5; color: #c92a2a; border: 1px solid #ffe3e3; }
+
+        /* --- Operational Review Actions Elements --- */
+        .action-icon-btn { background: none; border: none; cursor: pointer; font-size: 12px; padding: 6px 12px; margin: 0 2px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+        .review-btn { color: #00008F; background: #eef2ff; border: 1px solid #d0dfff; }
+        .review-btn:hover { background: #e0e7ff; }
+        .no-data-msg { padding: 50px; text-align: center; color: #888888; font-style: italic; font-size: 14px; }
+
+        /* --- Global Operational Processing Prompt Modals --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-card { background-color: #ffffff; width: 90%; max-width: 500px; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; animation: slideUp 0.2s ease-out; }
+        @keyframes slideUp { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header-title { padding: 20px 25px; border-bottom: 1px solid #eeeeee; font-size: 16px; font-weight: 700; color: #00008F; text-transform: uppercase; }
+        .modal-body { padding: 25px; font-size: 14px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-footer { background-color: #f8f9fa; padding: 15px 25px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #eeeeee; }
+        
+        .btn { padding: 10px 20px; font-size: 13px; font-weight: 600; border-radius: 4px; cursor: pointer; border: none; text-transform: uppercase; }
+        .btn-success { background-color: #2b8a3e; color: white; }
+        .btn-success:hover { background-color: #237032; }
+        .btn-danger { background-color: #FF0000; color: white; }
+        .btn-danger:hover { background-color: #cc0000; }
+        .btn-secondary { background-color: #e0e0e0; color: #333333; }
+        .btn-secondary:hover { background-color: #d5d5d5; }
+        footer { background-color: #ffffff; border-top: 1px solid #e0e0e0; padding: 20px 30px; text-align: center; font-size: 12px; color: #777777; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- --- Header Navigation Area --- -->
+    <header class="navbar">
+        <div class="nav-left">
+            <div class="aiosh-logo-container">
+                <span class="aiosh-logo-text">AIOSH</span>
+                <span class="aiosh-tagline">Corporate Administration Hub</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <!-- Notification Bell Icon Wrapper -->
+            <button class="icon-btn" onclick="toggleNotificationPanel(event)">
+                🔔<span class="notification-badge" id="notifCountBadge" style="display:none;">0</span>
+            </button>
+            <div class="notif-panel" id="notificationPanel">
+                <div class="notif-header">Compliance Review Stream Notification Logs</div>
+                <div id="notifPanelContents">
+                    <div class="notif-empty">No unread branch document submission notifications logged.</div>
+                </div>
+            </div>
+
+            <div class="profile-menu" onclick="toggleProfileDropdown(event)">
+                <div class="avatar" id="avatarCircle">A</div>
+                <div class="profile-info">
+                    <span class="profile-name" id="navProfileName">Admin</span>
+                    <span class="profile-meta">HQ Executive Administrator</span>
+                </div>
+            </div>
+            <div class="dropdown-panel" id="profileDropdown">
+                <button class="dropdown-item" onclick="triggerSignOut()">🚪 Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <section class="welcome-row">
+            <h2>Welcome back, Corporate Compliance</h2>
+            <p style="font-size:13px; color:#666; margin-top:4px;">Real-time Operational Safety and Health review matrix across regional branch domains.</p>
+        </section>
+ <!-- --- POSITIONED SECOND: Administrative Control Filter Toolbars --- -->
+        <section class="control-panel">
+            <div class="toolbar-row">
+<div class="filter-group">
+    <label>Regional Domain Focus</label>
+    <select id="filterRegion" class="form-control" onchange="processMasterStateEngine()">
+        <option value="all">Show All Regions</option>
+        <option value="NCR">NCR Region</option>
+        <option value="Luzon">Luzon Region</option>
+        <option value="VisMin">VisMin Region</option>
+    </select>
+</div>
+                <div class="filter-group">
+                    <label>Branch Domain Focus</label>
+                    <select id="filterBranch" class="form-control" onchange="processMasterStateEngine()">
+    <option value="all">Show All Branches</option>
+    <option value="Binondo">Binondo Branch Office</option>
+    <option value="Pampanga">Pampanga Branch Office</option>
+    <option value="Zamboanga">Zamboanga Branch Office</option>
+    <option value="Cagayan de Oro">Cagayan de Oro Branch Office</option>
+    <option value="Lipa">Lipa Branch Office</option>
+</select>
+
+                </div>
+                <div class="filter-group">
+                    <label>Filing Quarter Focus</label>
+                    <select id="filterQuarter" class="form-control" onchange="processMasterStateEngine()">
+                        <option value="all">All Quarters</option>
+                        <option value="1st Quarter">1st Quarter (Q1)</option>
+                        <option value="2nd Quarter">2nd Quarter (Q2)</option>
+                        <option value="3rd Quarter">3rd Quarter (Q3)</option>
+                        <option value="4th Quarter">4th Quarter (Q4)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Filing Calendar Year Focus</label>
+                    <select id="filterYear" class="form-control" onchange="processMasterStateEngine()">
+                        <option value="all">All Years</option>
+                        <!-- Options generated cleanly during lifecycle initialization -->
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status Classification</label>
+                    <select id="filterStatus" class="form-control" onchange="processMasterStateEngine()">
+                        <option value="all">All Items</option>
+                        <option value="pending">Pending Review Only</option>
+                        <option value="approved">Approved Logs</option>
+                        <option value="declined">Declined Logs</option>
+                    </select>
+                </div>
+            </div>
+
+          </section>
+        <!-- --- POSITIONED FIRST: Dynamic Visual Summary Metrics Section --- -->
+        <section class="metrics-grid-wrapper">
+            <!-- Gauge Compliance Card -->
+<!-- Paste this third metric card directly inside your .metrics-grid-wrapper section container -->
+<div class="metric-card">
+    <div>
+        <h4>Filing Expiration Risk Pipeline</h4>
+        <p class="metric-description" style="font-size: 12px; color: #666; margin-bottom: 15px; line-height: 1.4;">
+            Monitors total pending and approved branch documents hitting critical lifecycle boundaries.
+        </p>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%; justify-content: center;">
+        <!-- Yellow Risk Bar -->
+        <div style="display: grid; grid-template-columns: 100px 1fr 40px; align-items: center; gap: 12px;">
+            <div style="font-size: 12px; font-weight: 700; color: #b27300; text-align: right;">Notice (≤30d)</div>
+            <div style="background: #e9ecef; height: 20px; border-radius: 4px; overflow: hidden;">
+                <div id="riskBarYellow" class="bg-pending" style="width: 0%; height: 100%; transition: width 0.4s ease; background-color: #f59f00;"></div>
+            </div>
+            <div id="riskCountYellow" style="font-size: 13px; font-weight: bold; color: #666;">0</div>
+        </div>
+        <!-- Orange Risk Bar -->
+        <div style="display: grid; grid-template-columns: 100px 1fr 40px; align-items: center; gap: 12px;">
+            <div style="font-size: 12px; font-weight: 700; color: #d9480f; text-align: right;">Urgent (≤15d)</div>
+            <div style="background: #e9ecef; height: 20px; border-radius: 4px; overflow: hidden;">
+                <div id="riskBarOrange" style="width: 0%; height: 100%; transition: width 0.4s ease; background-color: #fd7e14;"></div>
+            </div>
+            <div id="riskCountOrange" style="font-size: 13px; font-weight: bold; color: #666;">0</div>
+        </div>
+        <!-- Red Risk Bar -->
+        <div style="display: grid; grid-template-columns: 100px 1fr 40px; align-items: center; gap: 12px;">
+            <div style="font-size: 12px; font-weight: 700; color: #FF0000; text-align: right;">Critical (≤7d)</div>
+            <div style="background: #e9ecef; height: 20px; border-radius: 4px; overflow: hidden;">
+                <div id="riskBarRed" class="bg-declined" style="width: 0%; height: 100%; transition: width 0.4s ease; background-color: #c92a2a;"></div>
+            </div>
+            <div id="riskCountRed" style="font-size: 13px; font-weight: bold; color: #666;">0</div>
+        </div>
+    </div>
+</div>
+
+            <div class="metric-card">
+                <div>
+                    <h4>Filing Compliance Yield</h4>
+                    <p class="metric-description">Tracks the overall ratio of approved compliance documentation across all checked branch files.</p>
+                </div>
+                <div class="gauge-chart-container">
+                    <svg class="gauge-svg" viewBox="0 0 200 100">
+                        <path class="gauge-bg" d="M20,90 A80,80 0 0,1 180,90" />
+                        <path class="gauge-fill" id="gaugeIndicatorPath" d="M20,90 A80,80 0 0,1 180,90" />
+                    </svg>
+                    <div class="gauge-value-text" id="gaugeYieldValue">0.0%</div>
+                    <div class="gauge-statement-sub" id="gaugeSummaryStatement">Awaiting grid calculation matrix...</div>
+                </div>
+            </div>
+
+            <!-- Regional Processing Stacked Bars -->
+            <div class="metric-card">
+                <div>
+                    <h4>Submission Status Metrics Distribution Breakdown</h4>
+                    <p class="metric-description">Visualizes volume allocation by branch, itemizing logs into Approved (Green), Pending (Yellow), and Declined (Red).</p>
+                </div>
+                <div class="bar-chart-container" id="barChartContainerWrapper">
+                    <!-- Dynamic rendering outputs injected inside core Javascript engine loop -->
+                </div>
+            </div>
+        </section>
+       
+<section class="control-panel">
+  <!-- Column Visibility Grid Panels Checklist -->
+            <div class="filter-group">
+                <label style="margin-bottom: 8px;">Visible Grid Columns Selection Matrix</label>
+                <!-- Replace your checklist panel group block with this shifted index layout structure -->
+<div class="column-select-box">
+    <label class="checkbox-label"><input type="checkbox" checked data-col="0" onchange="toggleColumnVisibility(this)"> Region</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="1" onchange="toggleColumnVisibility(this)"> Branch</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="2" onchange="toggleColumnVisibility(this)"> Doc Type</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="3" onchange="toggleColumnVisibility(this)"> Doc Name</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="4" onchange="toggleColumnVisibility(this)"> Quarter</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="5" onchange="toggleColumnVisibility(this)"> Year</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="6" onchange="toggleColumnVisibility(this)"> File Asset</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="7" onchange="toggleColumnVisibility(this)"> Date Issued</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="8" onchange="toggleColumnVisibility(this)"> Expiration Date</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="9" onchange="toggleColumnVisibility(this)"> Uploaded Date</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="10" onchange="toggleColumnVisibility(this)"> Status</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="11" onchange="toggleColumnVisibility(this)"> Branch Remarks</label>
+    <label class="checkbox-label"><input type="checkbox" checked data-col="12" onchange="toggleColumnVisibility(this)"> Admin Remarks</label>
+</div>
+
+            </div>
+        </section>
+</section>
+
+        <!-- --- POSITIONED THIRD: Master Compliance Ledger Grid Matrix Table --- -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <h3>Master Multi-Branch Compliance Requirement Ledger Matrix</h3>
+            </div>
+            <div class="table-responsive">
+                <table id="adminRecordsTable">
+                    <!-- Locate this specific section inside admin_dashboard.html and add the Region header line -->
+<thead>
+    <tr>
+        <th onclick="sortGridByField('region')" style="white-space: nowrap;">Region</th> <!-- ADDED COLUMN -->
+        <th onclick="sortGridByField('branch')">Branch</th>
+        <th onclick="sortGridByField('docType')">Document Type</th>
+        <th onclick="sortGridByField('docName')">Document Name</th>
+        <th onclick="sortGridByField('quarter')">Quarter</th>
+        <th onclick="sortGridByField('year')">Year</th>
+        <th>File Asset</th>
+        <th onclick="sortGridByField('dateIssued')">Date Issued</th>
+        <th onclick="sortGridByField('expirationDate')">Expiration Date</th>
+        <th onclick="sortGridByField('uploadedDate')">Uploaded Date</th>
+        <th onclick="sortGridByField('status')">Status</th>
+        <th>Branch Remarks</th>
+        <th>Admin Review Remarks</th>
+        <th style="cursor: default; text-align: center; min-width: 140px;">Review Actions</th>
+    </tr>
+</thead>
+
+                    <tbody id="adminTableBody">
+                        <tr>
+                            <td colspan="13" class="no-data-msg">No submissions currently found in corporate cache.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- --- INLINE APPROVAL AND REMARKS ASSIGNMENT PROMPT MODAL WINDOW --- -->
+    <div class="modal-overlay" id="reviewModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header-title">Process Compliance Requirement Review Assessment</div>
+            <div class="modal-body">
+                <div style="font-size:13px; color:#555; background:#f1f3f5; padding:12px; border-radius:4px; border-left:3px solid #00008F;">
+                    Target Submission: <strong id="modalTargetDocLabel">Document</strong><br>
+                    Submitting Branch: <strong id="modalTargetBranchLabel">Manila</strong>
+                </div>
+                <div class="filter-group">
+                    <label for="modalAdminRemarks" style="font-size:12px; font-weight:700;">Mandatory Assessment Review Feedback Notes</label>
+                    <textarea id="modalAdminRemarks" class="form-control" style="min-height:100px; resize:vertical;" placeholder="Provide rejection reasoning or processing validation notes here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeReviewModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="executeReviewAction('declined')">❌ Decline Asset</button>
+                <button class="btn btn-success" onclick="executeReviewAction('approved')">✅ Approve Asset</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 AXA Philippines. All Rights Reserved. Executive Management Infrastructure Control Board.
+    </footer>
+</body>
+<script>
+    let activeFieldSort = "branch";
+    let sortDirectionAsc = true;
+    let reviewTargetSubmissionId = null;
+
+    function toggleProfileDropdown(e) { e.stopPropagation(); const drop = document.getElementById('profileDropdown'); drop.style.display = drop.style.display === 'block' ? 'none' : 'block'; }
+    function toggleNotificationPanel(e) { 
+        e.stopPropagation(); 
+        const panel = document.getElementById('notificationPanel'); 
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+        
+        document.getElementById('notifCountBadge').style.display = 'none';
+        localStorage.setItem('aiosh_admin_notif_seen', 'true');
+    }
+
+    document.addEventListener('click', function() {
+        if(document.getElementById('profileDropdown')) document.getElementById('profileDropdown').style.display = 'none';
+        if(document.getElementById('notificationPanel')) document.getElementById('notificationPanel').style.display = 'none';
+    });
+
+    function triggerSignOut() {
+        if(confirm("Confirm security exit signature out from Corporate Administration Console?")) {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'welcome.html';
+        }
+    }
+
+    function toggleColumnVisibility(checkbox) {
+        const index = checkbox.getAttribute('data-col');
+        const table = document.getElementById('adminRecordsTable');
+        const rows = table.rows;
+        for (let i = 0; i < rows.length; i++) {
+            if(rows[i].cells[index]) {
+                rows[i].cells[index].className = checkbox.checked ? '' : 'hidden-col';
+            }
+        }
+    }
+
+    function sortGridByField(field) {
+        if (activeFieldSort === field) { sortDirectionAsc = !sortDirectionAsc; } 
+        else { activeFieldSort = field; sortDirectionAsc = true; }
+        processMasterStateEngine();
+    }
+
+    function setupAdminYearDropdown() {
+        const yearFilter = document.getElementById('filterYear');
+        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const currentYear = phTime.getFullYear();
+        yearFilter.innerHTML = `
+            <option value="all">All Years</option>
+            <option value="${currentYear}">${currentYear}</option>
+            <option value="${currentYear + 1}">${currentYear + 1}</option>
+        `;
+    }
+
+    function buildStreamNotifications(submissions) {
+        const badge = document.getElementById('notifCountBadge');
+        const container = document.getElementById('notifPanelContents');
+        const pendingItems = submissions.filter(d => d.status === "pending");
+        const alreadySeen = localStorage.getItem('aiosh_admin_notif_seen') === 'true';
+
+        if(pendingItems.length > 0) {
+            if (!alreadySeen) {
+                badge.textContent = pendingItems.length;
+                badge.style.display = 'inline-block';
+            }
+            container.innerHTML = '';
+            pendingItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = "notif-item";
+                div.innerHTML = `🔔 <strong>${item.branch} Branch</strong> submitted document type <strong>${item.docType}</strong> for your approval.`;
+                container.appendChild(div);
+            });
+        } else {
+            badge.style.display = 'none';
+            container.innerHTML = `<div class="notif-empty">No unread branch document submission notifications logged.</div>`;
+        }
+    }
+
+    function calculateAnalyticsDashboard(filteredRecords) {
+        const totalFiles = filteredRecords.length;
+        const approvedCount = filteredRecords.filter(r => r.status === 'approved').length;
+        const pendingCount = filteredRecords.filter(r => r.status === 'pending').length;
+        const declinedCount = filteredRecords.filter(r => r.status === 'declined').length;
+
+        const yieldRate = totalFiles > 0 ? ((approvedCount / totalFiles) * 100).toFixed(1) : "0.0";
+        document.getElementById('gaugeYieldValue').textContent = yieldRate + "%";
+        
+        const maxStrokeDash = 282.7; 
+        const percentageDecimal = totalFiles > 0 ? (approvedCount / totalFiles) : 0;
+        const offsetCalculation = maxStrokeDash - (maxStrokeDash * percentageDecimal);
+        document.getElementById('gaugeIndicatorPath').style.strokeDashoffset = offsetCalculation;
+
+        const activeB = document.getElementById('filterBranch').value;
+        const activeQ = document.getElementById('filterQuarter').value;
+        const branchContextString = activeB === 'all' ? "Multi-Branch Grid" : activeB + " Branch Office";
+        const quarterContextString = activeQ === 'all' ? "Full Fiscal Cycle" : activeQ;
+        document.getElementById('gaugeSummaryStatement').textContent = yieldRate + "% yield across " + branchContextString + " (" + quarterContextString + ")";
+
+                 const barContainer = document.getElementById('barChartContainerWrapper');
+    barContainer.innerHTML = '';
+    
+    let trackingBranches = [];
+    if (activeB === 'all') {
+        // Extracts distinct branch values from your active filtered subset rows
+        const allDistinctBranches = [...new Set(filteredRecords.map(r => r.branch))];
+        
+        // If no records match yet, defaults tracking bars straight to your new corporate layout map 
+        trackingBranches = allDistinctBranches.length > 0 ? allDistinctBranches : ["Binondo", "Pampanga", "Zamboanga", "Cagayan de Oro", "Lipa"];
+    } else {
+        trackingBranches = [activeB];
+    }
+
+    // Sort your tracking array rows alphabetically for visual presentation neatness
+    trackingBranches.sort();
+
+    trackingBranches.forEach(b => {
+        const branchFullSet = filteredRecords.filter(r => r.branch === b);
+        const bTotal = branchFullSet.length;
+        const bApp = branchFullSet.filter(r => r.status === 'approved').length;
+        const bPen = branchFullSet.filter(r => r.status === 'pending').length;
+        const bDec = branchFullSet.filter(r => r.status === 'declined').length;
+
+        const appPct = bTotal > 0 ? (bApp / bTotal) * 100 : 0;
+        const penPct = bTotal > 0 ? (bPen / bTotal) * 100 : 0;
+        const decPct = bTotal > 0 ? (bDec / bTotal) * 100 : 0;
+
+        const row = document.createElement('div');
+        row.className = "bar-row";
+        
+        let barsHtml = '';
+        if (bApp > 0) barsHtml += '<div class="bar-segment bg-approved" style="width: ' + appPct + '%" title="Approved">' + bApp + '</div>';
+        if (bPen > 0) barsHtml += '<div class="bar-segment bg-pending" style="width: ' + penPct + '%" title="Pending">' + bPen + '</div>';
+        if (bDec > 0) barsHtml += '<div class="bar-segment bg-declined" style="width: ' + decPct + '%" title="Declined">' + bDec + '</div>';
+        if (bTotal === 0) barsHtml += '<div style="font-size:11px; color:#999; padding-left:10px; line-height:24px;">No files filed</div>';
+
+        row.innerHTML = `
+            <div class="bar-label">${b} Branch</div>
+            <div class="bar-track">
+                ${barsHtml}
+            </div>
+            <div class="bar-total-count">${bTotal} files</div>
+        `;
+        barContainer.appendChild(row);
+    });
+
+    
+    // --- Paste this snippet directly inside the end of your calculateAnalyticsDashboard() function loop ---
+    let yellowRiskTotal = 0;
+    let orangeRiskTotal = 0;
+    let redRiskTotal = 0;
+
+    // Isolate active target records context boundaries cleanly
+    const pipelineTrackedItems = filteredRecords.filter(r => (r.status === 'approved' || r.status === 'pending') && r.expirationDate);
+    
+    // Core calendar timezone normalizer baseline checks
+    const phTimeCurrent = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+    const localTodayTimestamp = new Date(phTimeCurrent.getFullYear(), phTimeCurrent.getMonth(), phTimeCurrent.getDate());
+
+    pipelineTrackedItems.forEach(doc => {
+        const dateStringParts = doc.expirationDate.split('-');
+        if (dateStringParts.length !== 3) return;
+
+        const calculatedExpiryDate = new Date(parseInt(dateStringParts[0], 10), parseInt(dateStringParts[1], 10) - 1, parseInt(dateStringParts[2], 10));
+        const deltaMillisecondsDifference = calculatedExpiryDate.getTime() - localTodayTimestamp.getTime();
+        const activeDaysDeltaRemaining = Math.ceil(deltaMillisecondsDifference / (1000 * 60 * 60 * 24));
+
+        if (activeDaysDeltaRemaining >= 0 && activeDaysDeltaRemaining <= 30) {
+            if (activeDaysDeltaRemaining <= 7) {
+                redRiskTotal++;
+            } else if (activeDaysDeltaRemaining <= 15) {
+                orangeRiskTotal++;
+            } else {
+                yellowRiskTotal++;
+            }
+        }
+    });
+
+    // Compute layout percentage scaling parameters dynamically to maintain fluid chart bars sizing behavior
+    const cumulativeActiveRiskSum = yellowRiskTotal + orangeRiskTotal + redRiskTotal;
+    const computedYellowBarPercentage = cumulativeActiveRiskSum > 0 ? (yellowRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
+    const computedOrangeBarPercentage = cumulativeActiveRiskSum > 0 ? (orangeRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
+    const computedRedBarPercentage = cumulativeActiveRiskSum > 0 ? (redRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
+
+    // Inject metrics text properties and dimensions dynamically to the layout nodes
+    document.getElementById('riskCountYellow').textContent = yellowRiskTotal;
+    document.getElementById('riskBarYellow').style.width = computedYellowBarPercentage + "%";
+
+    document.getElementById('riskCountOrange').textContent = orangeRiskTotal;
+    document.getElementById('riskBarOrange').style.width = computedOrangeBarPercentage + "%";
+
+    document.getElementById('riskCountRed').textContent = redRiskTotal;
+    document.getElementById('riskBarRed').style.width = computedRedBarPercentage + "%";
+}
+    // --- Block 2 of Part 6 (Paste this directly below Block 1 to complete the file) ---
+    function openReviewModal(submissionId, docName, branch) {
+        reviewTargetSubmissionId = submissionId;
+        document.getElementById('modalTargetDocLabel').textContent = docName;
+        document.getElementById('modalTargetBranchLabel').textContent = branch + " Office";
+        document.getElementById('modalAdminRemarks').value = '';
+        document.getElementById('reviewModal').style.display = 'flex';
+    }
+
+    function closeReviewModal() { document.getElementById('reviewModal').style.display = 'none'; }
+
+    async function executeReviewAction(finalStatusStatus) {
+        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+        const remarksText = document.getElementById('modalAdminRemarks').value.trim();
+        if(!remarksText) { alert("Please provide mandatory notes."); return; }
+
+        const response = await fetch(MOCKAPI_URL);
+        const allSubmissions = await response.json();
+        const targetItem = allSubmissions.find(item => item.submissionId === reviewTargetSubmissionId);
+
+        if(targetItem) {
+            await fetch(`${MOCKAPI_URL}/${targetItem.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...targetItem, status: finalStatusStatus, adminRemarks: remarksText })
+            });
+        }
+
+        closeReviewModal();
+        localStorage.removeItem('aiosh_admin_notif_seen');
+        processMasterStateEngine();
+    }
+
+        // --- UPDATED MASTER ENGINE FOR LOCALSTORAGE MULTI-LAYER RE-FILTERING ---
+    async function processMasterStateEngine() {
+        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+        
+        const response = await fetch(MOCKAPI_URL);
+        const allSubmissions = await response.json();
+        
+        buildStreamNotifications(allSubmissions);
+
+        let filtered = [...allSubmissions];
+        const fRegion = document.getElementById('filterRegion').value;
+        const fBranch = document.getElementById('filterBranch').value;
+        const fQuarter = document.getElementById('filterQuarter').value;
+        const fYear = document.getElementById('filterYear').value;
+        const fStatus = document.getElementById('filterStatus').value;
+
+        if (fRegion !== 'all') filtered = filtered.filter(r => r.region === fRegion);
+        if (fBranch !== 'all') filtered = filtered.filter(r => r.branch === fBranch);
+        if (fQuarter !== 'all') filtered = filtered.filter(r => r.quarter === fQuarter);
+        if (fYear !== 'all') filtered = filtered.filter(r => r.year === fYear);
+        if (fStatus !== 'all') filtered = filtered.filter(r => r.status === fStatus);
+
+        filtered.sort((a, b) => {
+            let valA = (a[activeFieldSort] || '').toString().toLowerCase();
+            let valB = (b[activeFieldSort] || '').toString().toLowerCase();
+            return sortDirectionAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+        });
+
+        calculateAnalyticsDashboard(filtered);
+        renderAdminLedgerRows(filtered);
+    }
+
+
+          // --- UPDATED LAYOUT DATA ROW PAINTER WITH GEOGRAPHIC REGION COLUMN MATRIX ---
+    function renderAdminLedgerRows(records) {
+        const tbody = document.getElementById('adminTableBody');
+        tbody.innerHTML = '';
+
+        if(records.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="14" class="no-data-msg">No multi-branch submissions match active criteria parameters.</td></tr>`; // CHANGED COLSPAN TO 14
+            return;
+        }
+
+        records.forEach(doc => {
+            let badgeClass = "status-pending";
+            if (doc.status === "approved") badgeClass = "status-approved";
+            if (doc.status === "declined") badgeClass = "status-declined";
+
+            let actionCellContent = '';
+            if (!doc.status || doc.status === 'pending') {
+                actionCellContent = `<button class="action-icon-btn review-btn" onclick="openReviewModal('${doc.submissionId}', '${doc.docName}', '${doc.branch}')">⚖️ Review</button>`;
+            } else {
+                actionCellContent = `<span style="color: #666666; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">🔒 Locked</span>`;
+            }
+
+            const tr = document.createElement('tr');
+            // ADDED: Added <td>\${doc.region || '-'}</td> cell line right before the branch parameter token
+            tr.innerHTML = `
+                <td><span style="color: #666666; font-weight: 700; text-transform: uppercase; font-size: 11px;">${doc.region || '-'}</span></td>
+                <td><strong>${doc.branch}</strong></td>
+                <td>${doc.docType}</td>
+                <td>${doc.docName}</td>
+                <td>${doc.quarter}</td>
+                <td>${doc.year}</td>
+                <td>📁 <code>${doc.fileName}</code></td>
+                <td>${doc.dateIssued}</td>
+                <td>${doc.expirationDate}</td>
+                <td>${doc.uploadedDate}</td>
+                <td><span class="status-badge ${badgeClass}">${doc.status || 'pending'}</span></td>
+                <td><span style="color:#666; font-size:12px;">${doc.remarks || '-'}</span></td>
+                <td><span style="color:#b11b1b; font-weight:700; font-size:12px;">${doc.adminRemarks || '-'}</span></td>
+                <td style="text-align: center;">
+                    ${actionCellContent}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const checkboxes = document.querySelectorAll('.column-select-box input');
+        checkboxes.forEach(cb => toggleColumnVisibility(cb));
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function() {
+        setupAdminYearDropdown();
+        processMasterStateEngine();
+    });
+</script>
+</html>

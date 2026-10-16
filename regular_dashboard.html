@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIOSH - Regular Dashboard</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f8f9fa; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* --- Header Navigation Banner --- */
+        .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
+        
+        /* --- Interactive Dropdown Panels --- */
+        .avatar { width: 35px; height: 35px; background-color: #00008F; color: #ffffff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .profile-menu { display: flex; align-items: center; gap: 10px; border-left: 1px solid #e0e0e0; padding-left: 20px; cursor: pointer; }
+        .profile-info { display: flex; flex-direction: column; }
+        .profile-name { font-size: 13px; font-weight: 600; color: #111111; }
+        .profile-meta { font-size: 11px; color: #777777; }
+        .dropdown-panel { position: absolute; top: 60px; right: 0; background: #ffffff; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; display: none; min-width: 150px; z-index: 200; overflow: hidden; }
+        .dropdown-item { padding: 12px 20px; font-size: 13px; color: #333333; text-decoration: none; display: block; background: none; border: none; width: 100%; text-align: left; cursor: pointer; }
+        .dropdown-item:hover { background-color: #f5f5f5; }
+
+        .main-container { max-width: 1500px; width: 100%; margin: 30px auto; padding: 0 30px; flex-grow: 1; display: flex; flex-direction: column; gap: 25px; }
+        .welcome-row { display: flex; justify-content: space-between; align-items: center; background-color: #ffffff; padding: 25px 30px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-left: 4px solid #00008F; }
+        .submit-btn { background-color: #00008F; color: #ffffff; border: none; padding: 14px 24px; font-size: 14px; font-weight: 600; border-radius: 4px; cursor: pointer; text-decoration: none; transition: background 0.2s; box-shadow: 0 2px 4px rgba(0, 0, 143, 0.2); }
+        .submit-btn:hover { background-color: #000066; }
+        /* --- OPTION 1: Expiration Warning Dashboard Alerts Pane CSS --- */
+        .alerts-wrapper-container { display: flex; flex-direction: column; gap: 12px; margin-bottom: 5px; }
+        .alert-banner-card { padding: 15px 25px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: 600; line-height: 1.4; border-left: 5px solid #2b8a3e; background-color: #ebfbee; color: #2b8a3e; }
+        
+        /* Dynamic Expiration Severity Color Modifiers */
+        .alert-severity-yellow { background-color: #fff9db; border-color: #f59f00; color: #f59f00; }
+        .alert-severity-orange { background-color: #fff4e6; border-color: #fd7e14; color: #fd7e14; }
+        .alert-severity-red { background-color: #fff5f5; border-color: #FF0000; color: #FF0000; animation: flashGlow 2s infinite; }
+        
+        @keyframes flashGlow {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.2); }
+            50% { box-shadow: 0 0 12px 2px rgba(255, 0, 0, 0.3); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.2); }
+        }
+
+        .alert-renew-shortcut-btn { padding: 6px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; border-radius: 4px; background: none; cursor: pointer; border: 1px solid currentColor; color: inherit; transition: background 0.2s; }
+        .alert-renew-shortcut-btn:hover { background-color: rgba(0,0,0,0.05); }
+
+        /* --- Toolbar Controls (Filter, Column Toggle, Sorts) --- */
+        .control-panel { background: #ffffff; padding: 20px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 15px; }
+        .toolbar-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 11px; font-weight: 700; color: #666666; text-transform: uppercase; }
+        .form-control { padding: 8px 12px; border: 1px solid #cccccc; border-radius: 4px; font-size: 13px; outline: none; min-width: 140px; }
+        .form-control:focus { border-color: #00008F; }
+        .column-select-box { display: flex; flex-wrap: wrap; gap: 12px; background: #f8f9fa; padding: 12px; border-radius: 4px; border: 1px dashed #dddddd; }
+        .checkbox-label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #444444; cursor: pointer; }
+        /* --- Dynamic Grid Matrix Table --- */
+        .dashboard-section { background-color: #ffffff; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; }
+        .section-header { padding: 20px 30px; border-bottom: 1px solid #eeeeee; }
+        .section-header h3 { font-size: 18px; font-weight: 700; color: #00008F; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background-color: #f8f9fa; color: #555555; font-weight: 600; padding: 15px 20px; border-bottom: 2px solid #eeeeee; font-size: 11px; letter-spacing: 0.5px; cursor: pointer; user-select: none; text-transform: uppercase; }
+        th:hover { background-color: #f0f1f2; color: #00008F; }
+        td { padding: 15px 20px; border-bottom: 1px solid #eeeeee; color: #333333; vertical-align: middle; white-space: pre-wrap; }
+        tr:hover td { background-color: #fcfcfc; }
+        
+        /* Freeze date columns from line-wrapping layout rules */
+        th:nth-child(6), td:nth-child(6),
+        th:nth-child(7), td:nth-child(7),
+        th:nth-child(8), td:nth-child(8) { white-space: nowrap !important; }
+        .hidden-col { display: none !important; }
+        
+        /* --- Status Pill Badges --- */
+        .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; text-align: center; }
+        .status-pending { background-color: #fff9db; color: #f59f00; border: 1px solid #ffe3e3; }
+        .status-approved { background-color: #ebfbee; color: #2b8a3e; border: 1px solid #d3f9d8; }
+        .status-declined { background-color: #fff5f5; color: #c92a2a; border: 1px solid #ffe3e3; }
+
+        /* --- Operational Action Elements --- */
+        .action-icon-btn { background: none; border: none; cursor: pointer; font-size: 13px; padding: 5px 10px; margin: 0 2px; border-radius: 4px; font-weight: 600; }
+        .edit-btn { color: #00008F; background: #eef2ff; }
+        .edit-btn:hover { background: #e0e7ff; }
+        .delete-btn { color: #FF0000; background: #fff5f5; }
+        .delete-btn:hover { background: #fee2e2; }
+        .no-data-msg { padding: 50px; text-align: center; color: #888888; font-style: italic; font-size: 14px; }
+
+        /* --- Global Operational Modals --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-card { background-color: #ffffff; width: 90%; max-width: 550px; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; animation: slideUp 0.2s ease-out; }
+        @keyframes slideUp { from { transform: translateY(15px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-body { padding: 30px 40px; font-size: 14px; line-height: 1.6; color: #444444; }
+        .modal-footer { background-color: #f8f9fa; padding: 15px 40px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #eeeeee; }
+        
+        .btn { padding: 10px 20px; font-size: 13px; font-weight: 600; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-primary { background-color: #00008F; color: white; }
+        .btn-primary:hover { background-color: #000066; }
+        .btn-secondary { background-color: #e0e0e0; color: #333333; }
+        .btn-secondary:hover { background-color: #d5d5d5; }
+        .btn-danger { background-color: #FF0000; color: white; }
+        .btn-danger:hover { background-color: #cc0000; }
+        footer { background-color: #ffffff; border-top: 1px solid #e0e0e0; padding: 20px 30px; text-align: center; font-size: 12px; color: #777777; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- --- Header Navigation Area --- -->
+    <header class="navbar">
+        <div class="nav-left">
+            <div class="aiosh-logo-container">
+                <span class="aiosh-logo-text">AIOSH</span>
+                <span class="aiosh-tagline">Compliance Platform</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="profile-menu" onclick="toggleProfileDropdown(event)">
+                <div class="avatar" id="avatarCircle">U</div>
+                <div class="profile-info">
+                    <span class="profile-name" id="navProfileName">User</span>
+                    <span class="profile-meta" id="navProfileBranch">Branch regular</span>
+                </div>
+            </div>
+            <div class="dropdown-panel" id="profileDropdown">
+                <button class="dropdown-item" onclick="triggerSignOut()">🚪 Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- --- Dynamic Banner Greeting Row --- -->
+        <section class="welcome-row">
+            <div class="welcome-text">
+                <h2 id="welcomeGreeting">Welcome, User</h2>
+                <p id="branchSubtitle">AXA Philippines Compliance Management Dashboard</p>
+            </div>
+            <a href="Branch Compliance Document.html" class="submit-btn">📄 Submit Branch Compliance Document</a>
+        </section>
+
+        <!-- --- POSITIONED IN WELCOME CONTAINER: Expiration Warning Dashboard Alerts Container --- -->
+        <section class="alerts-wrapper-container" id="expirationAlertsPanelContainer">
+            <!-- Injected dynamically via Javascript loop processing logic -->
+        </section>
+
+        <!-- --- Advanced Grid Controls Panel --- -->
+        <section class="control-panel">
+            <div class="toolbar-row">
+                <div class="filter-group">
+                    <label>Sort Ordering</label>
+                    <select id="sortOrderSelect" class="form-control" onchange="applyFiltersAndSort()">
+                        <option value="asc">Ascending Order (A-Z)</option>
+                        <option value="desc">Descending Order (Z-A)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Status Filter</label>
+                    <select id="statusFilterSelect" class="form-control" onchange="applyFiltersAndSort()">
+                        <option value="all">Show All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="declined">Declined</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Date Issued Match</label>
+                    <input type="date" id="filterIssued" class="form-control" onchange="applyFiltersAndSort()">
+                </div>
+                <div class="filter-group">
+                    <label>Expiration Match</label>
+                    <input type="date" id="filterExpiry" class="form-control" onchange="applyFiltersAndSort()">
+                </div>
+                <div class="filter-group" style="margin-left: auto; padding-top: 15px;">
+                    <button class="btn btn-secondary" style="padding: 8px 15px;" onclick="resetAllFilters()">Reset Filters</button>
+                </div>
+            </div>
+            <!-- Column Visibility Wrapper -->
+            <div class="filter-group">
+                <label style="margin-bottom: 8px;">Visible Grid Columns Selection</label>
+                <div class="column-select-box">
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="0" onchange="toggleColumnVisibility(this)"> Doc Type</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="1" onchange="toggleColumnVisibility(this)"> Doc Name</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="2" onchange="toggleColumnVisibility(this)"> Quarter</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="3" onchange="toggleColumnVisibility(this)"> Year</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="4" onchange="toggleColumnVisibility(this)"> File Asset</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="5" onchange="toggleColumnVisibility(this)"> Date Issued</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="6" onchange="toggleColumnVisibility(this)"> Expiration Date</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="7" onchange="toggleColumnVisibility(this)"> Uploaded Date</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="8" onchange="toggleColumnVisibility(this)"> Status</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="9" onchange="toggleColumnVisibility(this)"> Remarks</label>
+                    <label class="checkbox-label"><input type="checkbox" checked data-col="10" onchange="toggleColumnVisibility(this)"> Admin Remarks</label>
+                </div>
+            </div>
+        </section>
+<!-- Paste this right above your main Submitted Requirements section container -->
+<section id="expirationAlertsPanelContainer" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; font-weight: 600; font-size: 14px;"></section>
+
+        <!-- --- Submission Metrics Dashboard Matrix --- -->
+        <section class="dashboard-section">
+            <div class="section-header">
+                <h3 id="tableTitle">Submitted Requirements</h3>
+            </div>
+            <div class="table-responsive">
+                <table id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortGridByField('docType')">Document Type</th>
+                            <th onclick="sortGridByField('docName')">Document Name</th>
+                            <th onclick="sortGridByField('quarter')">Quarter</th>
+                            <th onclick="sortGridByField('year')">Year</th>
+                            <th>File Asset</th>
+                            <th onclick="sortGridByField('dateIssued')">Date Issued</th>
+                            <th onclick="sortGridByField('expirationDate')">Expiration Date</th>
+                            <th onclick="sortGridByField('uploadedDate')">Uploaded Date</th>
+                            <th onclick="sortGridByField('status')">Status</th>
+                            <th>Remarks / Note</th>
+                            <th>Admin Remarks</th>
+                            <th style="cursor: default; text-align: center; min-width: 140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="documentTableBody">
+                        <tr>
+                            <td colspan="12" class="no-data-msg">No entries found matching filters.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- --- System Info Platform Overlay Window --- -->
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-card" style="border-top: 6px solid #00008F;">
+            <div class="modal-body" style="padding: 40px; text-align: justify;">
+                <h3 style="color:#00008F; font-size:22px; margin-bottom:15px; font-weight:900; letter-spacing:1px; text-align:center;">AIOSH</h3>
+                <p style="font-size:11px; text-transform:uppercase; color:#666; font-weight:bold; margin-bottom:20px; letter-spacing:1px; text-align:center;">Operational Safety and Health Platform</p>
+                AIOSH is a centralized compliance platform that enables branches to upload OSH requirements into a standardized system, automatically categorizes submissions, tracks compliance in real-time via AI-powered dashboards (leveraging Secure GPT), and generates Executive-ready reports in minutes. The system includes auto-notifications to keep branches on track and provides Corp Sec with actionable insights for strategic decision-making.
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="closeModal('infoModal')">Proceed to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- Global CRUD Validation Modals Area --- -->
+    <div class="modal-overlay" id="confirmModal" style="display: none;">
+        <div class="modal-card" style="border-top: 6px solid #00008F; max-width: 450px;">
+            <div class="modal-body" id="confirmModalBody" style="padding: 30px; font-weight:600; text-align:center;">
+                Are you sure?
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+                <button class="btn btn-primary" id="confirmModalActionBtn">Confirm Action</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 AXA Philippines. All Rights Reserved. Confidential Corporate Portal.
+    </footer>
+</body>
+<script>
+    let activeBranch = "";
+    let activeFieldSort = "docType"; 
+    let globalActiveIndex = null;
+
+    function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+
+    function toggleProfileDropdown(e) {
+        e.stopPropagation();
+        const drop = document.getElementById('profileDropdown');
+        drop.style.display = drop.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', function() {
+        if(document.getElementById('profileDropdown')) document.getElementById('profileDropdown').style.display = 'none';
+    });
+
+    function triggerSignOut() {
+        if(confirm("Are you sure you want to sign out from the AIOSH platform?")) {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'welcome.html';
+        }
+    }
+
+    function toggleColumnVisibility(checkbox) {
+        const index = checkbox.getAttribute('data-col');
+        const table = document.getElementById('recordsTable');
+        const rows = table.rows;
+        
+        for (let i = 0; i < rows.length; i++) {
+            if(rows[i].cells[index]) {
+                if(checkbox.checked) {
+                    rows[i].cells[index].classList.remove('hidden-col');
+                } else {
+                    rows[i].cells[index].classList.add('hidden-col');
+                }
+            }
+        }
+    }
+
+    function sortGridByField(field) {
+        activeFieldSort = field;
+        applyFiltersAndSort();
+    }
+
+    function resetAllFilters() {
+        document.getElementById('filterIssued').value = '';
+        document.getElementById('filterExpiry').value = '';
+        document.getElementById('statusFilterSelect').value = 'all';
+        document.getElementById('sortOrderSelect').value = 'asc';
+        applyFiltersAndSort();
+    }
+
+    // --- DYNAMIC SEVERITY ALERT CALCULATION PANEL MATRIX ENGINE ---
+    function evaluateExpirationAlerts(records) {
+        const alertsContainer = document.getElementById('expirationAlertsPanelContainer');
+        if (!alertsContainer) return;
+        
+        alertsContainer.innerHTML = ''; 
+
+        const approvedRecords = records.filter(r => r.status === 'approved' && r.expirationDate);
+        
+        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const today = new Date(phTime.getFullYear(), phTime.getMonth(), phTime.getDate());
+
+        let alertItemsHtml = '';
+
+        approvedRecords.forEach(doc => {
+            const expParts = doc.expirationDate.split('-');
+            const expDate = new Date(parseInt(expParts[0]), parseInt(expParts[1]) - 1, parseInt(expParts[2]));
+            
+            const timeDelta = expDate.getTime() - today.getTime();
+            const daysRemaining = Math.ceil(timeDelta / (1000 * 60 * 60 * 24));
+
+            if (daysRemaining >= 0 && daysRemaining <= 30) {
+                let severityClass = "alert-severity-yellow";
+                let alertBadgeLabel = "⚠️ Notice";
+                let timeDescriptor = daysRemaining + " days remaining";
+
+                if (daysRemaining === 0) timeDescriptor = "expires today";
+                
+                if (daysRemaining <= 7) {
+                    severityClass = "alert-severity-red";
+                    alertBadgeLabel = "🛑 Critical Warning";
+                } else if (daysRemaining <= 15) {
+                    severityClass = "alert-severity-orange";
+                    alertBadgeLabel = "⚠️ Urgent Warning";
+                }
+
+                alertItemsHtml += `
+                    <div class="alert-banner-card ${severityClass}">
+                        <div>
+                            <strong>${alertBadgeLabel}:</strong> Your active approved document 
+                            <u>${doc.docName}</u> (${doc.docType}) is nearing expiration [${timeDescriptor}, Target: ${doc.expirationDate}].
+                        </div>
+                        <button class="alert-renew-shortcut-btn" onclick="triggerDirectRenewal('${doc.submissionId}')">⚡ Renew File</button>
+                    </div>
+                `;
+            }
+        });
+
+        if (alertItemsHtml !== '') {
+            alertsContainer.innerHTML = alertItemsHtml;
+        } else {
+            alertsContainer.innerHTML = `
+                <div class="alert-banner-card">
+                    <div>✅ <strong>System Status:</strong> All active approved branch compliance requirements are completely compliant and secure.</div>
+                </div>
+            `;
+        }
+    }
+
+    function triggerDirectRenewal(id) {
+        localStorage.setItem('editTargetId', id);
+        window.location.href = 'Branch Compliance Document.html';
+    }
+    // --- Block 2 of Part 6 (Paste this directly below Block 1 to complete the file) ---
+     async function applyFiltersAndSort() {
+        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+        
+        try {
+            const response = await fetch(MOCKAPI_URL);
+            const allSubmissions = await response.json();
+            
+            let records = allSubmissions.filter(doc => doc.branch === activeBranch);
+
+            const fIssued = document.getElementById('filterIssued').value;
+            const fExpiry = document.getElementById('filterExpiry').value;
+            const fStatus = document.getElementById('statusFilterSelect').value;
+            const sortDirection = document.getElementById('sortOrderSelect').value;
+
+            if (fIssued) records = records.filter(d => d.dateIssued === fIssued);
+            if (fExpiry) records = records.filter(d => d.expirationDate === fExpiry);
+            if (fStatus !== 'all') records = records.filter(d => d.status === fStatus);
+
+            records.sort((a, b) => {
+                let valA = (a[activeFieldSort] || '').toString().toLowerCase();
+                let valB = (b[activeFieldSort] || '').toString().toLowerCase();
+                return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+
+            evaluateExpirationAlerts(allSubmissions.filter(doc => doc.branch === activeBranch));
+            renderTableMatrix(records);
+        } catch (error) {
+            console.error("Database connection fault:", error);
+        }
+    }
+
+       function renderTableMatrix(records) {
+        const tbody = document.getElementById('documentTableBody');
+        tbody.innerHTML = '';
+
+        if (records.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="12" class="no-data-msg">No submissions match the filter queries.</td></tr>`;
+            return;
+        }
+
+        records.forEach(doc => {
+            let badgeClass = "status-pending";
+            if (doc.status === "approved") badgeClass = "status-approved";
+            if (doc.status === "declined") badgeClass = "status-declined";
+
+            // --- FIXED ACTION BUTTON HOOK: Hides Edit/Delete if status is Approved ---
+            let actionCellContent = '';
+            if (doc.status === "approved") {
+                actionCellContent = `<span style="color: #666666; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; justify-content: center; width: 100%;">🔒 Verified</span>`;
+            } else {
+                actionCellContent = `
+                    <button class="action-icon-btn edit-btn" onclick="initiateRowUpdate('${doc.submissionId}')">✏️ Edit</button>
+                    <button class="action-icon-btn delete-btn" onclick="initiateRowDelete('${doc.submissionId}')">🗑️ Delete</button>
+                `;
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${doc.docType}</strong></td>
+                <td>${doc.docName}</td>
+                <td>${doc.quarter}</td>
+                <td>${doc.year}</td>
+                <td>📁 <code>${doc.fileName}</code></td>
+                <td>${doc.dateIssued}</td>
+                <td>${doc.expirationDate}</td>
+                <td>${doc.uploadedDate}</td>
+                <td><span class="status-badge ${badgeClass}">${doc.status || 'pending'}</span></td>
+                <td><span style="color: #444; font-size:12px;">${doc.remarks || '-'}</span></td>
+                <td><span style="color: #b11b1b; font-weight:600; font-size:12px;">${doc.adminRemarks || '-'}</span></td>
+                <td style="text-align: center; white-space: nowrap;">
+                    ${actionCellContent}
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const checkboxes = document.querySelectorAll('.column-select-box input');
+        checkboxes.forEach(cb => toggleColumnVisibility(cb));
+    }
+
+
+    function initiateRowDelete(id) {
+        globalActiveIndex = id;
+        document.getElementById('confirmModalBody').textContent = "Are you sure you want to delete this compliance record row data entry permanently?";
+        const actionBtn = document.getElementById('confirmModalActionBtn');
+        actionBtn.className = "btn btn-danger";
+        actionBtn.onclick = executeRowDelete;
+        openModal('confirmModal');
+    }
+
+    function executeRowDelete() {
+        let allSubmissions = JSON.parse(localStorage.getItem('aiosh_submissions')) || [];
+        allSubmissions = allSubmissions.filter(doc => doc.submissionId !== globalActiveIndex);
+        localStorage.setItem('aiosh_submissions', JSON.stringify(allSubmissions));
+        closeModal('confirmModal');
+        applyFiltersAndSort();
+    }
+
+    function initiateRowUpdate(id) {
+        globalActiveIndex = id;
+        document.getElementById('confirmModalBody').textContent = "Are you sure you want to update/edit this data row submission entry parameters?";
+        const actionBtn = document.getElementById('confirmModalActionBtn');
+        actionBtn.className = "btn btn-primary";
+        actionBtn.onclick = function() {
+            localStorage.setItem('editTargetId', globalActiveIndex);
+            window.location.href = 'Branch Compliance Document.html';
+        };
+        openModal('confirmModal');
+    }
+
+    function closeModal(modalId) { 
+        document.getElementById(modalId).style.display = 'none'; 
+        const userString = localStorage.getItem('currentUser');
+        if (userString && modalId === 'infoModal') {
+            const user = JSON.parse(userString);
+            sessionStorage.setItem('aiosh_modal_seen_' + user.email, 'true');
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const userString = localStorage.getItem('currentUser');
+        
+        if (userString) {
+            const user = JSON.parse(userString);
+            activeBranch = user.branch;
+            
+            const cleanName = user.email.split('@')[0];
+            document.getElementById('welcomeGreeting').textContent = `Welcome, ${cleanName}`;
+            document.getElementById('navProfileName').textContent = cleanName;
+            document.getElementById('navProfileBranch').textContent = `${user.region} - ${user.branch} Branch`;
+            document.getElementById('branchSubtitle').textContent = `AXA Philippines Operational Dashboard — ${user.region} Region (${user.branch} Branch Office)`;
+            document.getElementById('tableTitle').textContent = `Submitted Compliance Requirements — ${user.branch} Branch`;
+            document.getElementById('avatarCircle').textContent = cleanName.charAt(0).toUpperCase();
+
+            const hasSeenModal = sessionStorage.getItem('aiosh_modal_seen_' + user.email);
+            if (hasSeenModal === 'true') {
+                document.getElementById('infoModal').style.display = 'none';
+            } else {
+                document.getElementById('infoModal').style.display = 'flex';
+            }
+
+            applyFiltersAndSort();
+        } else {
+            window.location.href = 'welcome.html';
+        }
+    });
+function evaluateExpirationAlerts(records) {
+    const alertsContainer = document.getElementById('expirationAlertsPanelContainer');
+    if (!alertsContainer) return;
+    
+    alertsContainer.innerHTML = ''; // Clear container placeholder
+
+    // Filter and process ONLY Approved and Pending items while completely ignoring Declined files
+    const trackedRecords = records.filter(r => (r.status === 'approved' || r.status === 'pending') && r.expirationDate);
+    
+    // Establish dynamic normalized Manila local system clock parameters
+    const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+    const today = new Date(phTime.getFullYear(), phTime.getMonth(), phTime.getDate());
+
+    let alertItemsHtml = '';
+
+    trackedRecords.forEach(doc => {
+        // Robust splitter rule preventing parseInt array breakage
+        const expParts = doc.expirationDate.split('-');
+        if (expParts.length !== 3) return;
+
+        const expDate = new Date(parseInt(expParts[0], 10), parseInt(expParts[1], 10) - 1, parseInt(expParts[2], 10));
+        
+        const timeDelta = expDate.getTime() - today.getTime();
+        const daysRemaining = Math.ceil(timeDelta / (1000 * 60 * 60 * 24));
+
+        if (daysRemaining >= 0 && daysRemaining <= 30) {
+            let severityStyle = "background-color: #fff9db; border-left: 5px solid #f59f00; color: #b27300;"; // Yellow Notice Default
+            let alertBadgeLabel = "⚠️ Notice";
+            let timeDescriptor = daysRemaining + " days remaining";
+
+            if (daysRemaining === 0) timeDescriptor = "expires today";
+            
+            if (daysRemaining <= 7) {
+                severityStyle = "background-color: #fff5f5; border-left: 5px solid #FF0000; color: #FF0000; animation: flashGlow 2s infinite;"; // Red Critical
+                alertBadgeLabel = "🛑 Critical Warning";
+            } else if (daysRemaining <= 15) {
+                severityStyle = "background-color: #fff4e6; border-left: 5px solid #fd7e14; color: #d9480f;"; // Orange Urgent
+                alertBadgeLabel = "⚠️ Urgent Warning";
+            }
+
+            let statusLabelText = doc.status === 'pending' ? ' (Pending Approval Verification)' : '';
+
+            alertItemsHtml += `
+                <div style="padding: 15px 25px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; ${severityStyle}">
+                    <div>
+                        <strong>${alertBadgeLabel}:</strong> Your active document 
+                        <u>${doc.docName}</u> (${doc.docType})${statusLabelText} is nearing expiration [${timeDescriptor}, Target: ${doc.expirationDate}].
+                    </div>
+                    <button style="padding: 6px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; border-radius: 4px; background: none; cursor: pointer; border: 1px solid currentColor; color: inherit;" onclick="localStorage.setItem('editTargetId', '${doc.submissionId}'); window.location.href = 'Branch Compliance Document.html';">⚡ Renew File</button>
+                </div>
+            `;
+        }
+    });
+
+    if (alertItemsHtml !== '') {
+        alertsContainer.innerHTML = alertItemsHtml;
+    } else {
+        alertsContainer.innerHTML = `
+            <div style="padding: 15px 25px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.03); display: flex; align-items: center; border-left: 5px solid #2b8a3e; background-color: #ebfbee; color: #2b8a3e;">
+                <div>✅ <strong>System Status:</strong> All active approved and pending branch compliance requirements are completely compliant and secure.</div>
+            </div>
+        `;
+    }
+}
+
+</script>
+</html>

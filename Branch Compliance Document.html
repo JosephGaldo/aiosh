@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIOSH - Submit Branch Compliance Document</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #f8f9fa; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* --- Header Navigation Area --- */
+        .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
+        
+        .avatar { width: 35px; height: 35px; background-color: #00008F; color: #ffffff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .profile-menu { display: flex; align-items: center; gap: 10px; border-left: 1px solid #e0e0e0; padding-left: 20px; cursor: pointer; }
+        .profile-info { display: flex; flex-direction: column; }
+        .profile-name { font-size: 13px; font-weight: 600; color: #111111; }
+        .profile-meta { font-size: 11px; color: #777777; }
+        
+        /* --- Interactive Dropdown Panels --- */
+        .dropdown-panel { position: absolute; top: 60px; right: 0; background: #ffffff; border: 1px solid #e0e0e0; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border-radius: 4px; display: none; min-width: 150px; z-index: 200; overflow: hidden; }
+        .dropdown-item { padding: 12px 20px; font-size: 13px; color: #333333; text-decoration: none; display: block; background: none; border: none; width: 100%; text-align: left; cursor: pointer; }
+        .dropdown-item:hover { background-color: #f5f5f5; }
+
+        /* --- Page Container Systems --- */
+        .main-container { max-width: 1200px; width: 100%; margin: 30px auto; padding: 0 30px; flex-grow: 1; display: flex; flex-direction: column; gap: 30px; }
+        .back-link { font-size: 14px; color: #00008F; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; width: max-content; }
+        .back-link:hover { text-decoration: underline; }
+        
+        /* --- Form View Components --- */
+        .form-section { background-color: #ffffff; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-top: 4px solid #00008F; }
+        .section-header { padding: 20px 30px; border-bottom: 1px solid #eeeeee; display: flex; justify-content: space-between; align-items: center; }
+        .section-header h2 { font-size: 18px; font-weight: 700; color: #00008F; }
+        
+        .form-grid { padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: span 2; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; font-weight: 700; color: #444444; text-transform: uppercase; }
+        .form-control { padding: 10px 12px; border: 1px solid #cccccc; border-radius: 4px; font-size: 14px; outline: none; background-color: #ffffff; }
+        .form-control:focus { border-color: #00008F; }
+        textarea.form-control { min-height: 80px; resize: vertical; white-space: pre-wrap; }
+        .file-input-wrapper { display: flex; flex-direction: column; gap: 4px; }
+        .file-error { color: #FF0000; font-size: 12px; font-weight: 600; display: none; margin-top: 4px; }
+        .checkbox-wrapper { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; }
+        .checkbox-wrapper input { margin-top: 3px; cursor: pointer; }
+        .checkbox-wrapper label { font-size: 13px; color: #555555; line-height: 1.4; cursor: pointer; font-weight: normal; text-transform: none; }
+        
+        .form-footer { padding: 20px 30px; background-color: #f8f9fa; border-top: 1px solid #eeeeee; display: flex; justify-content: flex-end; gap: 15px; }
+        .btn { padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 4px; cursor: pointer; border: none; }
+        .btn-primary { background-color: #00008F; color: white; }
+        .btn-primary:hover { background-color: #000066; }
+        .btn-secondary { background-color: #e0e0e0; color: #333333; text-decoration: none; display: inline-block; text-align: center; }
+        .btn-secondary:hover { background-color: #d5d5d5; }
+
+        /* --- Progress Indicator Grid Matrix --- */
+        .matrix-section { background: #ffffff; padding: 25px 30px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .matrix-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .matrix-title { font-size: 16px; font-weight: 700; color: #00008F; text-transform: uppercase; letter-spacing: 0.5px; }
+        .matrix-grid { display: grid; grid-template-columns: 2fr repeat(4, 1fr); gap: 1px; background-color: #e0e0e0; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden; }
+        .matrix-header { background-color: #f1f3f5; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #495057; padding: 12px; text-align: center; }
+        .matrix-header.align-left { text-align: left; }
+        .matrix-cell { background-color: #ffffff; padding: 12px; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+        .matrix-cell.align-left { justify-content: flex-start; font-weight: 600; color: #212529; }
+        
+        /* --- Progress Status Track Pills --- */
+        .prog-badge { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; width: 100%; text-align: center; }
+        .p-missing { background-color: #f1f3f5; color: #868e96; }
+        .p-pending { background-color: #fff9db; color: #f59f00; border: 1px solid #f59f00; }
+        .p-approved { background-color: #ebfbee; color: #2b8a3e; border: 1px solid #2b8a3e; }
+        .p-declined { background-color: #fff5f5; color: #c92a2a; border: 1px solid #c92a2a; }
+
+        /* --- Lower History Logs Data Table Grid --- */
+        .history-section { background-color: #ffffff; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden; }
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background-color: #f8f9fa; color: #555555; font-weight: 600; padding: 15px 20px; border-bottom: 2px solid #eeeeee; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
+        td { padding: 14px 20px; border-bottom: 1px solid #eeeeee; color: #333333; }
+        tr:hover td { background-color: #fcfcfc; }
+        .no-data { padding: 40px; text-align: center; color: #888888; font-style: italic; }
+
+        /* --- Global Structural Modals --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-card { background-color: #ffffff; width: 90%; max-width: 450px; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; animation: slideUp 0.15s ease-out; }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-body { padding: 30px; font-weight:600; text-align:center; font-size: 14px; line-height: 1.5; }
+        .modal-footer { background-color: #f8f9fa; padding: 15px 30px; display: flex; justify-content: center; gap: 12px; border-top: 1px solid #eeeeee; }
+        footer { background-color: #ffffff; border-top: 1px solid #e0e0e0; padding: 20px 30px; text-align: center; font-size: 12px; color: #777777; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- --- Header Navigation Area --- -->
+    <header class="navbar">
+        <div class="nav-left">
+            <div class="aiosh-logo-container">
+                <span class="aiosh-logo-text">AIOSH</span>
+                <span class="aiosh-tagline">Compliance Platform</span>
+            </div>
+        </div>
+        <div class="nav-right">
+            <div class="profile-menu" onclick="toggleProfileDropdown(event)">
+                <div class="avatar" id="avatarCircle">U</div>
+                <div class="profile-info">
+                    <span class="profile-name" id="navProfileName">User</span>
+                    <span class="profile-meta" id="navProfileBranch">Branch regular</span>
+                </div>
+            </div>
+            <div class="dropdown-panel" id="profileDropdown">
+                <button class="dropdown-item" onclick="triggerSignOut()">🚪 Sign Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <a href="regular_dashboard.html" class="back-link" onclick="clearEditContext()">← Back to Dashboard</a>
+
+        <!-- --- POSITIONED FIRST: Quarter Progress Tracker Grid Matrix Section --- -->
+        <section class="matrix-section">
+            <div class="matrix-header-row">
+                <div class="matrix-title">Filing Status Tracker Grid</div>
+                <!-- Added interactive dynamic matrix calendar selector menu options -->
+                <div>
+                    <label style="font-size:12px; font-weight:700; color:#444; text-transform:uppercase; margin-right:8px;">View Year Matrix:</label>
+                    <select id="matrixYearSelector" class="form-control" style="display:inline-block; width:120px; padding:6px 10px;" onchange="buildProgressAndHistoryViews()"></select>
+                </div>
+            </div>
+            <div class="matrix-grid" id="progressIndicatorGrid"></div>
+        </section>
+
+        <!-- --- POSITIONED SECOND: Primary Submission Input Form Section --- -->
+        <section class="form-section">
+            <div class="section-header">
+                <h2 id="formPanelTitle">Submit Branch Compliance Document</h2>
+                <span id="editModeIndicator" style="font-size: 11px; font-weight: 700; background: #eef2ff; color: #00008F; padding: 4px 8px; border-radius: 4px; display: none;">EDIT MODE ACTIVATED</span>
+            </div>
+            
+            <form id="complianceForm" onsubmit="processFormSubmission(event)">
+                <div class="form-grid">
+                    
+                    <div class="form-group">
+                        <label for="docType">Document Type</label>
+                        <select id="docType" class="form-control" required>
+                            <option value="" disabled selected>-- Select Type --</option>
+                            <option value="DOLE Registration">DOLE Registration</option>
+                            <option value="Designated Safety Officer">Designated Safety Officer</option>
+                            <option value="BOSH Training Certificate">BOSH Training Certificate</option>
+                            <option value="First Aid Training Certificate">First Aid Training Certificate</option>
+                            <option value="OSH Program">OSH Program</option>
+                            <option value="Fire Safety Inspection Certificate">Fire Safety Inspection Certificate</option>
+                            <option value="Mayor's Permit">Mayor's Permit</option>
+                            <option value="Occupancy Permit">Occupancy Permit</option>
+                            <option value="Contract of Lease">Contract of Lease</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="docName">Document Name</label>
+                        <input type="text" id="docName" class="form-control" style="background-color: #e9ecef; cursor: not-allowed;" placeholder="Upload a file to auto-populate name..." readonly required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quarter">Quarter</label>
+                        <select id="quarter" class="form-control" required>
+                            <option value="" disabled selected>-- Select Quarter --</option>
+                            <option value="1st Quarter">1st Quarter</option>
+                            <option value="2nd Quarter">2nd Quarter</option>
+                            <option value="3rd Quarter">3rd Quarter</option>
+                            <option value="4th Quarter">4th Quarter</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="year">Year</label>
+                        <select id="year" class="form-control" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dateIssued">Date Issued</label>
+                        <input type="date" id="dateIssued" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="expirationDate">Expiration Date</label>
+                        <input type="date" id="expirationDate" class="form-control" required>
+                    </div>
+
+                    <div class="form-group full-width file-input-wrapper">
+                        <label for="fileUpload">File Upload (Accepts: JPEG, PNG, JPG, PDF only)</label>
+                        <input type="file" id="fileUpload" class="form-control" accept=".jpeg,.png,.jpg,.pdf" onchange="autoPopulateDocName()">
+                        <div id="fileErrorMsg" class="file-error">Invalid file format. Please upload an authorized image asset or PDF item.</div>
+                        <div id="fileCurrentValue" style="font-size:12px; color:#555; margin-top:2px; font-weight:600; display:none;"></div>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="remarks">Remarks / Notes (Supports Multiline Paragraphs)</label>
+                        <textarea id="remarks" class="form-control" placeholder="Type compliance notes, descriptions or contextual modifications here..." required></textarea>
+                    </div>
+
+                    <div class="form-group full-width checkbox-wrapper">
+                        <input type="checkbox" id="attestation" required>
+                        <label for="attestation">I hereby attest and certify that the file uploaded and metadata provided above are genuine, accurate, and completely compliant with the internal Operational Safety and Health standards of AXA Philippines.</label>
+                    </div>
+                </div>
+
+                <div class="form-footer">
+                    <a href="regular_dashboard.html" class="btn btn-secondary" onclick="clearEditContext()">Cancel</a>
+                    <button type="submit" id="submitActionBtn" class="btn btn-primary">Submit Document</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- --- POSITIONED THIRD: Lower Upload History Data Table Grid --- -->
+        <section class="history-section">
+            <div style="padding: 20px 30px; border-bottom: 1px solid #eeeeee;">
+                <h3 style="font-size: 15px; font-weight: 700; color: #00008F; text-transform: uppercase;">Upload History Logs</h3>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Document Type</th>
+                            <th>Document Name</th>
+                            <th>Quarter</th>
+                            <th>Year</th>
+                            <th>Upload Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="5" class="no-data">No history items logged for this branch session.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal-overlay" id="alertModal" style="display: none;">
+        <div class="modal-card" style="border-top: 6px solid #2b8a3e;">
+            <div class="modal-body" id="alertModalBody">Submission alert notification feedback.</div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="dismissAlertAndRedirect()">Acknowledge</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        &copy; 2026 AXA Philippines. All Rights Reserved. Confidential Corporate Portal.
+    </footer>
+</body>
+<script>
+    let activeUser = null;
+    let editTargetId = null;
+    const documentTypesArray = [
+        "DOLE Registration", "Designated Safety Officer", "BOSH Training Certificate",
+        "First Aid Training Certificate", "OSH Program", "Fire Safety Inspection Certificate",
+        "Mayor's Permit", "Occupancy Permit", "Contract of Lease"
+    ];
+
+    function clearEditContext() { localStorage.removeItem('editTargetId'); }
+    function dismissAlertAndRedirect() {
+        clearEditContext();
+        window.location.href = 'regular_dashboard.html';
+    }
+
+    function toggleProfileDropdown(e) {
+        e.stopPropagation();
+        const drop = document.getElementById('profileDropdown');
+        drop.style.display = drop.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', function() {
+        const drop = document.getElementById('profileDropdown');
+        if (drop) drop.style.display = 'none';
+    });
+
+    function triggerSignOut() {
+        if(confirm("Are you sure you want to sign out from the AIOSH platform?")) {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'welcome.html';
+        }
+    }
+
+    function autoPopulateDocName() {
+        const fileInput = document.getElementById('fileUpload');
+        const docNameInput = document.getElementById('docName');
+        
+        if (fileInput.files && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const fileNameWithExtension = file.name;
+            const cleanName = fileNameWithExtension.substring(0, fileNameWithExtension.lastIndexOf('.')) || fileNameWithExtension;
+            docNameInput.value = cleanName;
+        }
+    }
+
+     async function processFormSubmission(event) {
+        event.preventDefault();
+        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+        
+        const fileInput = document.getElementById('fileUpload');
+        const fileErrorMsg = document.getElementById('fileErrorMsg');
+        let targetFileName = "";
+        
+        const getRes = await fetch(MOCKAPI_URL);
+        let allSubmissions = await getRes.json();
+        
+        if (fileInput.files.length > 0) {
+            const uploadedFile = fileInput.files[0];
+            const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
+            const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
+            
+            if (!validExtensions.includes(fileExtension)) {
+                fileErrorMsg.style.display = 'block';
+                return;
+            }
+            fileErrorMsg.style.display = 'none';
+            const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
+            const inputYear = document.getElementById('year').value;
+            targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
+        } else if (editTargetId) {
+            const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
+            targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
+        } else {
+            fileErrorMsg.style.display = 'block';
+            return;
+        }
+
+        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const formatUploadedDate = phTime.toISOString().split('T')[0];
+
+        let payloadData = {};
+        let requestUrl = MOCKAPI_URL;
+        let httpMethod = "POST";
+
+        if (editTargetId) {
+            const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
+            if (recordToEdit) {
+                requestUrl = `${MOCKAPI_URL}/${recordToEdit.id}`;
+                httpMethod = "PUT";
+                payloadData = {
+                    ...recordToEdit,
+                    docType: document.getElementById('docType').value,
+                    docName: document.getElementById('docName').value,
+                    quarter: document.getElementById('quarter').value,
+                    year: document.getElementById('year').value,
+                    dateIssued: document.getElementById('dateIssued').value,
+                    expirationDate: document.getElementById('expirationDate').value,
+                    remarks: document.getElementById('remarks').value,
+                    fileName: targetFileName,
+                    uploadedDate: formatUploadedDate,
+                    status: "pending"
+                };
+            }
+        } else {
+            payloadData = {
+                submissionId: "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                branch: activeUser.branch,
+                region: activeUser.region,
+                docType: document.getElementById('docType').value,
+                docName: document.getElementById('docName').value,
+                quarter: document.getElementById('quarter').value,
+                year: document.getElementById('year').value,
+                dateIssued: document.getElementById('dateIssued').value,
+                expirationDate: document.getElementById('expirationDate').value,
+                remarks: document.getElementById('remarks').value,
+                fileName: targetFileName,
+                uploadedDate: formatUploadedDate,
+                status: "pending",
+                adminRemarks: ""
+            };
+        }
+
+        await fetch(requestUrl, {
+            method: httpMethod,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadData)
+        });
+
+        document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong>`;
+        document.getElementById('alertModal').style.display = 'flex';
+    }
+</script>
+<script>
+    // --- UPDATED SYSTEM MATRIX ENGINE: Now parses calendar lookup variations matching the selected option ---
+    function buildProgressAndHistoryViews() {
+        const allSubmissions = JSON.parse(localStorage.getItem('aiosh_submissions')) || [];
+        const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
+        
+        // Dynamic lookup year parameter extracted straight from user interface toggle dropdown menu element
+        const matrixYearSelector = document.getElementById('matrixYearSelector');
+        const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
+
+        const matrixContainer = document.getElementById('progressIndicatorGrid');
+        if (matrixContainer) {
+            matrixContainer.innerHTML = `
+                <div class="matrix-header align-left">Compliance Requirement Category</div>
+                <div class="matrix-header">Q1</div>
+                <div class="matrix-header">Q2</div>
+                <div class="matrix-header">Q3</div>
+                <div class="matrix-header">Q4</div>
+            `;
+
+            const quartersLookup = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
+
+            documentTypesArray.forEach(type => {
+                const labelCell = document.createElement('div');
+                labelCell.className = "matrix-cell align-left";
+                labelCell.textContent = type;
+                matrixContainer.appendChild(labelCell);
+
+                quartersLookup.forEach(q => {
+                    const cell = document.createElement('div');
+                    cell.className = "matrix-cell";
+                    
+                    // Match submissions filtered by category, quarter, and the explicitly selected Matrix year
+                    const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && r.year === selectedMatrixYear);
+                    
+                    if (matchedRecord) {
+                        let badgeClass = "p-pending";
+                        if (matchedRecord.status === "approved") badgeClass = "p-approved";
+                        if (matchedRecord.status === "declined") badgeClass = "p-declined";
+                        
+                        cell.innerHTML = `<span class="prog-badge ${badgeClass}">${matchedRecord.status || 'pending'}</span>`;
+                    } else {
+                        cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
+                    }
+                    matrixContainer.appendChild(cell);
+                });
+            });
+        }
+
+        const historyBody = document.getElementById('historyTableBody');
+        if (historyBody) {
+            historyBody.innerHTML = '';
+
+            if (branchRecords.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="5" class="no-data">No history items logged for this branch session.</td></tr>`;
+                return;
+            }
+
+            branchRecords.sort((a, b) => b.uploadedDate.localeCompare(a.uploadedDate));
+
+            branchRecords.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${rec.docType}</strong></td>
+                    <td>${rec.docName}</td>
+                    <td>${rec.quarter}</td>
+                    <td>${rec.year}</td>
+                    <td><code>${rec.uploadedDate}</code></td>
+                `;
+                historyBody.appendChild(tr);
+            });
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const userString = localStorage.getItem('currentUser');
+        if (!userString) {
+            window.location.href = 'welcome.html';
+            return;
+        }
+        
+        activeUser = JSON.parse(userString);
+        const cleanName = activeUser.email.split('@')[0];
+        
+        document.getElementById('navProfileName').textContent = cleanName;
+        document.getElementById('navProfileBranch').textContent = `${activeUser.region} - ${activeUser.branch} Branch`;
+        document.getElementById('avatarCircle').textContent = cleanName.charAt(0).toUpperCase();
+
+        // 1. SETUP DYNAMIC DROP-DOWN OPTIONS (BOTH MATRIX AND FORM FIELDS)
+        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const currentYear = phTime.getFullYear(); // Derived explicitly as 2026
+        const nextYear = currentYear + 1;         // Derived explicitly as 2027
+
+        const yearSelect = document.getElementById('year');
+        if (yearSelect) {
+            yearSelect.innerHTML = `
+                <option value="${currentYear}">${currentYear}</option>
+                <option value="${nextYear}">${nextYear}</option>
+            `;
+        }
+
+        const matrixYearSelector = document.getElementById('matrixYearSelector');
+        if (matrixYearSelector) {
+            matrixYearSelector.innerHTML = `
+                <option value="${currentYear}">${currentYear}</option>
+                <option value="${nextYear}">${nextYear}</option>
+            `;
+        }
+
+        // 2. PROCESS EDIT-MODE CONFIGURATIONS
+        editTargetId = localStorage.getItem('editTargetId');
+        if (editTargetId) {
+            const allSubmissions = JSON.parse(localStorage.getItem('aiosh_submissions')) || [];
+            const recordToEdit = allSubmissions.find(d => d.submissionId === editTargetId);
+            
+            if (recordToEdit) {
+                document.getElementById('formPanelTitle').textContent = "Modify Compliance Document Entry Parameters";
+                document.getElementById('editModeIndicator').style.display = 'inline-block';
+                document.getElementById('submitActionBtn').textContent = "Update Document Entry";
+                document.getElementById('fileUpload').required = false;
+                
+                document.getElementById('docType').value = recordToEdit.docType;
+                document.getElementById('docName').value = recordToEdit.docName;
+                document.getElementById('quarter').value = recordToEdit.quarter;
+                document.getElementById('year').value = recordToEdit.year;
+                document.getElementById('dateIssued').value = recordToEdit.dateIssued;
+                document.getElementById('expirationDate').value = recordToEdit.expirationDate;
+                document.getElementById('remarks').value = recordToEdit.remarks;
+                
+                // Synchronize tracker matrix layout to reflect document filing context target year automatically
+                if (matrixYearSelector) matrixYearSelector.value = recordToEdit.year;
+
+                const currentFileField = document.getElementById('fileCurrentValue');
+                if (currentFileField) {
+                    currentFileField.innerHTML = `Linked Attachment Asset: 📁 <code>${recordToEdit.fileName}</code> (Leave blank to keep original file structure)`;
+                    currentFileField.style.display = "block";
+                }
+            }
+        } else {
+            const fileInput = document.getElementById('fileUpload');
+            if (fileInput) fileInput.required = true;
+        }
+
+        // 3. BUILD SYSTEM LOG VIEWS
+        buildProgressAndHistoryViews();
+    });
+</script>
+</html>

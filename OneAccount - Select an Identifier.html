@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<!-- saved from url=(0084)file:///C:/Users/jgaldo/Desktop/AIOSH/OneAccount%20-%20Select%20an%20Identifier.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneAccount - Select an Identifier</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .card-body {
+            padding: 40px 45px 30px 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .shield-logo {
+            width: 100px; 
+            height: auto;
+            margin-bottom: 8px;
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #00008F;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111111;
+            margin-bottom: 35px;
+            text-align: center;
+        }
+
+        .identifier-list {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .identifier-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 14px 0;
+            border-bottom: 1px solid #e0e0e0;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+        }
+
+        .identifier-item:hover {
+            background-color: #fafafa;
+        }
+
+        .identifier-text {
+            font-size: 14px;
+            color: #333333;
+        }
+
+        .remove-btn {
+            color: #cccccc;
+            font-size: 14px;
+            padding: 0 5px;
+        }
+
+        .action-link {
+            width: 100%;
+            font-size: 14px;
+            color: #3b5998;
+            text-decoration: none;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+        .footer-links {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 45px;
+            font-size: 13px;
+        }
+
+        .language-select {
+            border: 1px solid #cccccc;
+            padding: 6px 12px;
+            border-radius: 4px;
+            background-color: #fff;
+        }
+
+        .contact-link {
+            color: #3b5998;
+            text-decoration: none;
+        }
+
+        .card-footer {
+            border-top: 1px solid #f0f0f0;
+            padding: 15px 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #777777;
+        }
+
+        .footer-logo {
+            height: 24px;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="card-body">
+            <div class="logo-area">
+                <img src="./OneAccount - Select an Identifier_files/axaOne.svg" alt="OneAccount Shield" class="shield-logo" onerror="this.style.display='none'">
+                
+            </div>
+
+            <h1>Select an identifier</h1>
+
+            <div class="identifier-list">
+                <!-- Selectable Dynamic Row Item -->
+                <a href="file:///C:/Users/jgaldo/Desktop/AIOSH/regular_dashboard.html" id="dynamicLink" class="identifier-item">
+                    <span class="identifier-text" id="dynamicUser">branch1@axa.com.ph</span>
+                    <span class="remove-btn">X</span>
+                </a>
+                
+                <a href="file:///C:/Users/jgaldo/Desktop/AIOSH/welcome.html" class="action-link">Use another identifier</a>
+            </div>
+
+            <div class="footer-links">
+                <select class="language-select">
+                    <option value="en">English</option>
+                </select>
+                <a href="file:///C:/Users/jgaldo/Desktop/AIOSH/OneAccount%20-%20Select%20an%20Identifier.html#" class="contact-link">Contact us</a>
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <img src="./OneAccount - Select an Identifier_files/axa-logo-solid-rgb.svg" alt="AXA Logo" class="footer-logo" onerror="this.style.display='none'">
+            <span>© 2026 AXA All Rights Reserved</span>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Read active credential string entry map from application layer storage container
+            const userString = localStorage.getItem('currentUser');
+            
+            if (userString) {
+                const user = JSON.parse(userString);
+                
+                // Replace baseline text context string with active item email parameters
+                document.getElementById('dynamicUser').textContent = user.email;
+                
+                // Adjust routing target context string
+                document.getElementById('dynamicLink').href = user.landingPage;
+            }
+        });
+    </script>
+
+
+</body></html>

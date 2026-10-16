@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!-- saved from url=(0050)file:///C:/Users/jgaldo/Desktop/AIOSH/welcome.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - AIOSH Login</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background-color: #ffffff;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .card-body {
+            padding: 40px 45px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .aiosh-logo {
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: #00008F; 
+            margin-bottom: 5px;
+        }
+
+        .brand-subtitle {
+            font-size: 12px;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #111111;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333333;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #00008F;
+        }
+
+        .error-message {
+            color: #FF0000; 
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .login-btn {
+            width: 100%;
+            background-color: #00008F; 
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .login-btn:hover {
+            background-color: #000066;
+        }
+
+        .card-footer {
+            border-top: 1px solid #f0f0f0;
+            padding: 15px 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 12px;
+            color: #777777;
+            background-color: #fff;
+        }
+
+        .footer-logo {
+            height: 20px;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <form id="loginForm" class="card-body" onsubmit="handleLogin(event)">
+            <div class="logo-area">
+                <div class="aiosh-logo">AIOSH</div>
+                <div class="brand-subtitle">AXA Philippines Portal</div>
+            </div>
+
+            <h1>Sign In</h1>
+
+            <div class="form-group">
+                <label for="username">Username / Email</label>
+                <input type="text" id="username" placeholder="name@axa.com.ph" required="">
+                <div id="errorMsg" class="error-message" style="display: block;">Account not found. Access restricted to authorized accounts.</div>
+            </div>
+
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+
+        <div class="card-footer">
+            <img src="./welcome_files/axa-logo-solid-rgb.svg" alt="AXA Logo" class="footer-logo" onerror="this.style.display='none'">
+            <span>© 2026 AXA Philippines. All Rights Reserved</span>
+        </div>
+    </div>
+
+    <script>
+       // Front-end user table mapping emails to roles and specific landing pages
+const userDatabase = [
+    { email: "branch1@axa.com.ph", role: "regular", branch: "Binondo", region: "NCR", landingPage: "regular_dashboard.html" },
+    { email: "branch2@axa.com.ph", role: "regular", branch: "Pampanga", region: "Luzon", landingPage: "regular_dashboard.html" },
+    { email: "branch3@axa.com.ph", role: "regular", branch: "Zamboanga", region: "VisMin", landingPage: "regular_dashboard.html" },
+    { email: "branch4@axa.com.ph", role: "regular", branch: "Cagayan de Oro", region: "VisMin", landingPage: "regular_dashboard.html" },
+    { email: "branch5@axa.com.ph", role: "regular", branch: "Lipa", region: "Luzon", landingPage: "regular_dashboard.html" },
+    { email: "admin1@axa.com.ph", role: "admin", branch: "HQ", landingPage: "admin_dashboard.html" }
+];
+
+// Ensure error message is explicitly hidden on fresh page load or sign-out redirect
+document.addEventListener("DOMContentLoaded", function() {
+    const errorMsg = document.getElementById('errorMsg');
+    if (errorMsg) {
+        errorMsg.style.display = 'none';
+    }
+});
+
+function handleLogin(event) {
+    event.preventDefault(); // Stop page from refreshing
+    
+    const usernameInput = document.getElementById('username').value.trim().toLowerCase();
+    const errorMsg = document.getElementById('errorMsg');
+
+    // Find the matching account item
+    const matchedUser = userDatabase.find(user => user.email === usernameInput);
+
+    if (matchedUser) {
+        errorMsg.style.display = 'none';
+        
+        // Store structural user details globally within temporary browser storage
+        localStorage.setItem('currentUser', JSON.stringify(matchedUser));
+        
+        // Advance page view forward
+        window.location.href = 'OneAccount - Select an Identifier.html';
+    } else {
+        // ONLY show the error message if a submission was made and no match was found
+        errorMsg.style.display = 'block';
+    }
+}
+    </script>
+
+
+</body></html>
