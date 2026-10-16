@@ -30,6 +30,7 @@
         .main-container { max-width: 1200px; width: 100%; margin: 30px auto; padding: 0 30px; flex-grow: 1; display: flex; flex-direction: column; gap: 30px; }
         .back-link { font-size: 14px; color: #00008F; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; width: max-content; }
         .back-link:hover { text-decoration: underline; }
+        
         /* --- Form View Components --- */
         .form-section { background-color: #ffffff; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-top: 4px solid #00008F; }
         .section-header { padding: 20px 30px; border-bottom: 1px solid #eeeeee; display: flex; justify-content: space-between; align-items: center; }
@@ -64,6 +65,7 @@
         .matrix-header.align-left { text-align: left; }
         .matrix-cell { background-color: #ffffff; padding: 12px; font-size: 13px; display: flex; align-items: center; justify-content: center; }
         .matrix-cell.align-left { justify-content: flex-start; font-weight: 600; color: #212529; }
+        
         /* --- Progress Status Track Pills --- */
         .prog-badge { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; width: 100%; text-align: center; }
         .p-missing { background-color: #f1f3f5; color: #868e96; }
@@ -85,12 +87,8 @@
         .modal-card { background-color: #ffffff; width: 90%; max-width: 450px; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); overflow: hidden; animation: slideUp 0.15s ease-out; }
         @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .modal-body { padding: 30px; font-weight:600; text-align:center; font-size: 14px; line-height: 1.5; }
-        .modal-footer { background-color: #f8f9fa; padding: 15px 30px; display: flex; justify-content: center; border-top: 1px solid #eeeeee; }
+        .modal-footer { background-color: #f8f9fa; padding: 15px 30px; display: flex; justify-content: center; gap: 12px; border-top: 1px solid #eeeeee; }
         footer { background-color: #ffffff; border-top: 1px solid #e0e0e0; padding: 20px 30px; text-align: center; font-size: 12px; color: #777777; margin-top: auto; }
-        .status-badge { padding: 4px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block; }
-        .status-pending { background-color: #fff9db; color: #f59f00; }
-        .status-approved { background-color: #ebfbee; color: #2b8a3e; }
-        .status-declined { background-color: #fff5f5; color: #c92a2a; }
     </style>
 </head>
 <body>
@@ -108,7 +106,7 @@
                 <div class="avatar" id="avatarCircle">U</div>
                 <div class="profile-info">
                     <span class="profile-name" id="navProfileName">User</span>
-                    <span class="profile-meta">Branch Representative</span>
+                    <span class="profile-meta" id="navProfileBranch">Branch regular</span>
                 </div>
             </div>
             <div class="dropdown-panel" id="profileDropdown">
@@ -118,19 +116,34 @@
     </header>
 
     <main class="main-container">
-        <a href="regular_dashboard.html" class="back-link" onclick="localStorage.removeItem('editTargetId');">⬅️ Back to Operational Dashboard</a>
+        <a href="regular_dashboard.html" class="back-link">← Back to Dashboard</a>
 
-        <!-- --- Form View Component --- -->
+        <!-- --- POSITIONED FIRST: Quarter Progress Tracker Grid Matrix Section --- -->
+        <section class="matrix-section">
+            <div class="matrix-header-row">
+                <div class="matrix-title">Filing Status Tracker Grid</div>
+                <div>
+                    <label style="font-size:12px; font-weight:700; color:#444; text-transform:uppercase; margin-right:8px;">View Year Matrix:</label>
+                    <select id="matrixYearSelector" class="form-control" style="display:inline-block; width:120px; padding:6px 10px;" onchange="buildProgressAndHistoryViews()"></select>
+                </div>
+            </div>
+            <div class="matrix-grid" id="progressIndicatorGrid"></div>
+        </section>
+
+        <!-- --- POSITIONED SECOND: Primary Submission Input Form Section --- -->
         <section class="form-section">
             <div class="section-header">
-                <h2 id="formTitleHeader">AXA Compliance Filing Portal</h2>
+                <h2 id="formPanelTitle">Submit Branch Compliance Document</h2>
+                <span id="editModeIndicator" style="font-size: 11px; font-weight: 700; background: #eef2ff; color: #00008F; padding: 4px 8px; border-radius: 4px; display: none;">EDIT MODE ACTIVATED</span>
             </div>
+            
             <form id="complianceForm" onsubmit="processFormSubmission(event)">
                 <div class="form-grid">
+                    
                     <div class="form-group">
-                        <label for="docType">Document Type Rule Template</label>
-                        <select id="docType" class="form-control" required onchange="syncAutomatedDocumentNameField()">
-                            <option value="" disabled selected>Select Requirement Classification Category...</option>
+                        <label for="docType">Document Type</label>
+                        <select id="docType" class="form-control" required>
+                            <option value="" disabled selected>-- Select Type --</option>
                             <option value="DOLE Registration">DOLE Registration</option>
                             <option value="Designated Safety Officer">Designated Safety Officer</option>
                             <option value="BOSH Training Certificate">BOSH Training Certificate</option>
@@ -142,15 +155,16 @@
                             <option value="Contract of Lease">Contract of Lease</option>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label for="docName">Automated Requirement Record Designation Name</label>
-                        <input type="text" id="docName" class="form-control" readonly placeholder="System generates name parameter tracking string..." style="background-color: #f1f3f5; font-weight:600; color:#555;">
+                        <label for="docName">Document Name</label>
+                        <input type="text" id="docName" class="form-control" style="background-color: #e9ecef; cursor: not-allowed;" placeholder="Upload a file to auto-populate name..." readonly required>
                     </div>
 
                     <div class="form-group">
-                        <label for="quarter">Target Filing Operational Fiscal Quarter</label>
+                        <label for="quarter">Quarter</label>
                         <select id="quarter" class="form-control" required>
-                            <option value="" disabled selected>Select Quarter...</option>
+                            <option value="" disabled selected>-- Select Quarter --</option>
                             <option value="1st Quarter">1st Quarter</option>
                             <option value="2nd Quarter">2nd Quarter</option>
                             <option value="3rd Quarter">3rd Quarter</option>
@@ -159,79 +173,64 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="year">Filing Calendar Year Focus</label>
-                        <select id="year" class="form-control" required>
-                            <option value="" disabled selected>Select Year...</option>
-                            <option value="2026">2026</option>
-                            <option value="2027">2027</option>
-                        </select>
+                        <label for="year">Year</label>
+                        <select id="year" class="form-control" required></select>
                     </div>
 
                     <div class="form-group">
-                        <label for="dateIssued">Official Verification Date Issued</label>
+                        <label for="dateIssued">Date Issued</label>
                         <input type="date" id="dateIssued" class="form-control" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="expirationDate">Official Field Expiration Date</label>
+                        <label for="expirationDate">Expiration Date</label>
                         <input type="date" id="expirationDate" class="form-control" required>
                     </div>
 
                     <div class="form-group full-width file-input-wrapper">
-                        <label for="fileUpload">Attach Certified Compliance File Asset (.JPEG, .JPG, .PNG, .PDF)</label>
-                        <input type="file" id="fileUpload" class="form-control" accept=".jpeg,.jpg,.png,.pdf">
-                        <span class="file-error" id="fileErrorMsg">Please attach a valid compliance attachment asset matching requirements.</span>
+                        <label for="fileUpload">File Upload (Accepts: JPEG, PNG, JPG, PDF only)</label>
+                        <input type="file" id="fileUpload" class="form-control" accept=".jpeg,.png,.jpg,.pdf" onchange="autoPopulateDocName()">
+                        <div id="fileErrorMsg" class="file-error">Invalid file format. Please upload an authorized image asset or PDF item.</div>
+                        <div id="fileCurrentValue" style="font-size:12px; color:#555; margin-top:2px; font-weight:600; display:none;"></div>
                     </div>
 
                     <div class="form-group full-width">
-                        <label for="remarks">Branch Descriptive Filing Notes / Context Remarks</label>
-                        <textarea id="remarks" class="form-control" placeholder="Provide extra branch compliance details or notes if necessary..."></textarea>
+                        <label for="remarks">Remarks / Notes (Supports Multiline Paragraphs)</label>
+                        <textarea id="remarks" class="form-control" placeholder="Type compliance notes, descriptions or contextual modifications here..." required></textarea>
                     </div>
 
                     <div class="form-group full-width checkbox-wrapper">
-                        <input type="checkbox" id="certifyCheck" required>
-                        <label for="certifyCheck">I formally certify under strict corporate responsibility that the attached safety records are valid, accurate, and comply with state and AXA Philippines OSH framework structures.</label>
+                        <input type="checkbox" id="attestation" required>
+                        <label for="attestation">I hereby attest and certify that the file uploaded and metadata provided above are genuine, accurate, and completely compliant with the internal Operational Safety and Health standards of AXA Philippines.</label>
                     </div>
                 </div>
+
                 <div class="form-footer">
-                    <a href="regular_dashboard.html" class="btn btn-secondary" onclick="localStorage.removeItem('editTargetId');">Cancel</a>
-                    <button type="submit" class="btn btn-primary" id="formSubmitActionBtnText">🚀 Dispatch Compliance Filing</button>
+                    <a href="regular_dashboard.html" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" id="submitActionBtn" class="btn btn-primary">Submit Document</button>
                 </div>
             </form>
         </section>
-        <section class="matrix-section">
-            <div class="matrix-header-row">
-                <div class="matrix-title">Annual Branch Fiscal Progress Tracker Status Matrix</div>
-            </div>
-            <div class="matrix-grid" id="progressTrackingGridMatrix">
-                <div class="matrix-header align-left">Requirement Classification Category</div>
-                <div class="matrix-header">1st Quarter</div>
-                <div class="matrix-header">2nd Quarter</div>
-                <div class="matrix-header">3rd Quarter</div>
-                <div class="matrix-header">4th Quarter</div>
-            </div>
-        </section>
 
+        <!-- --- POSITIONED THIRD: Lower Upload History Data Table Grid --- -->
         <section class="history-section">
-            <div class="section-header" style="border-bottom: 1px solid #eeeeee; padding: 20px 30px;">
-                <h3 style="font-size: 15px; font-weight: 700; color: #00008F; text-transform: uppercase;">Filing Transmission History Log Stream</h3>
+            <div style="padding: 20px 30px; border-bottom: 1px solid #eeeeee;">
+                <h3 style="font-size: 15px; font-weight: 700; color: #00008F; text-transform: uppercase;">Upload History Logs</h3>
             </div>
             <div class="table-responsive">
                 <table>
                     <thead>
                         <tr>
-                            <th>Doc Type</th>
-                            <th>Designation Name</th>
-                            <th>Filing Target Window</th>
-                            <th>File Asset</th>
-                            <th>Uploaded Date</th>
-                            <th>Status Tag</th>
-                            <th>Descriptive Remarks</th>
+                            <th>Document Type</th>
+                            <th>Document Name</th>
+                            <th>Quarter</th>
+                            <th>Year</th>
+                            <th>Upload Date</th>
                         </tr>
                     </thead>
-                    <tbody id="historyLogsTableBody">
+                    <tbody id="historyTableBody">
                         <tr>
-                            <td colspan="7" class="no-data">No history found.</td>
+                            <td colspan="5" class="no-data">Loading...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -241,11 +240,9 @@
 
     <div class="modal-overlay" id="alertModal" style="display: none;">
         <div class="modal-card" style="border-top: 6px solid #2b8a3e;">
-            <div class="modal-body" id="alertModalBody">
-                Transaction logged successfully.
-            </div>
+            <div class="modal-body" id="alertModalBody">Submission alert notification feedback.</div>
             <div class="modal-footer">
-                <button class="btn btn-primary" style="background-color: #2b8a3e;" onclick="closeModalAndRedirect()">Acknowledge & Sync Dashboard</button>
+                <button class="btn btn-primary" onclick="dismissAlertAndRedirect()">Acknowledge</button>
             </div>
         </div>
     </div>
@@ -253,10 +250,21 @@
     <footer>
         &copy; 2026 AXA Philippines. All Rights Reserved. Confidential Corporate Portal.
     </footer>
+</body>
 <script>
     let activeUser = null;
     let editTargetId = null;
-    const MOCKAPI_URL = "https://mockapi.io";
+    const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+    
+    const documentTypesArray = [
+        "DOLE Registration", "Designated Safety Officer", "BOSH Training Certificate",
+        "First Aid Training Certificate", "OSH Program", "Fire Safety Inspection Certificate",
+        "Mayor's Permit", "Occupancy Permit", "Contract of Lease"
+    ];
+
+    function dismissAlertAndRedirect() {
+        window.location.href = 'regular_dashboard.html';
+    }
 
     function toggleProfileDropdown(e) {
         e.stopPropagation();
@@ -265,7 +273,8 @@
     }
 
     document.addEventListener('click', function() {
-        if(document.getElementById('profileDropdown')) document.getElementById('profileDropdown').style.display = 'none';
+        const drop = document.getElementById('profileDropdown');
+        if (drop) drop.style.display = 'none';
     });
 
     function triggerSignOut() {
@@ -275,159 +284,64 @@
         }
     }
 
-    function syncAutomatedDocumentNameField() {
-        const typeSelect = document.getElementById('docType').value;
-        const nameInput = document.getElementById('docName');
-        if (!typeSelect || !activeUser) {
-            nameInput.value = "";
-            return;
-        }
-        const cleanStub = typeSelect.toUpperCase().replace(/\s+/g, '_');
-        const shortBranch = activeUser.branch.toUpperCase().replace(/\s+/g, '_');
-        nameInput.value = `AXA_${shortBranch}_${cleanStub}_RECORD`;
-    }
-
-    async function loadUploadHistoryAndMatrix() {
-        try {
-            const response = await fetch(MOCKAPI_URL);
-            const allSubmissions = await response.json();
-            
-            const branchRecords = allSubmissions.filter(doc => doc.branch === activeUser.branch);
-            
-            const tbody = document.getElementById('historyLogsTableBody');
-            tbody.innerHTML = '';
-
-            if (branchRecords.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="no-data">No historical asset uploads logged for this branch domain.</td></tr>`;
-            } else {
-                branchRecords.forEach(doc => {
-                    let badgeClass = "status-pending";
-                    if (doc.status === "approved") badgeClass = "status-approved";
-                    if (doc.status === "declined") badgeClass = "status-declined";
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${doc.docType}</strong></td>
-                        <td>${doc.docName}</td>
-                        <td>${doc.quarter} - ${doc.year}</td>
-                        <td>📁 <code>${doc.fileName}</code></td>
-                        <td>${doc.uploadedDate}</td>
-                        <td><span class="status-badge ${badgeClass}">${doc.status || 'pending'}</span></td>
-                        <td><span style="color:#666; font-size:12px;">${doc.remarks || '-'}</span></td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            }
-
-            const matrixContainer = document.getElementById('progressTrackingGridMatrix');
-            matrixContainer.innerHTML = `
-                <div class="matrix-header align-left">Requirement Classification Category</div>
-                <div class="matrix-header">1st Quarter</div>
-                <div class="matrix-header">2nd Quarter</div>
-                <div class="matrix-header">3rd Quarter</div>
-                <div class="matrix-header">4th Quarter</div>
-            `;
-
-            const categories = [
-                "DOLE Registration", "Designated Safety Officer", "BOSH Training Certificate",
-                "First Aid Training Certificate", "OSH Program", "Fire Safety Inspection Certificate",
-                "Mayor's Permit", "Occupancy Permit", "Contract of Lease"
-            ];
-
-            const quarters = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
-
-            categories.forEach(cat => {
-                const labelCell = document.createElement('div');
-                labelCell.className = "matrix-cell align-left";
-                labelCell.textContent = cat;
-                matrixContainer.appendChild(labelCell);
-
-                quarters.forEach(q => {
-                    const match = branchRecords.find(r => r.docType === cat && r.quarter === q);
-                    const cell = document.createElement('div');
-                    cell.className = "matrix-cell";
-
-                    if (!match) {
-                        cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
-                    } else if (match.status === "approved") {
-                        cell.innerHTML = `<span class="prog-badge p-approved">Approved</span>`;
-                    } else if (match.status === "declined") {
-                        cell.innerHTML = `<span class="prog-badge p-declined">Declined</span>`;
-                    } else {
-                        cell.innerHTML = `<span class="prog-badge p-pending">Pending</span>`;
-                    }
-                    matrixContainer.appendChild(cell);
-                });
-            });
-
-        } catch (error) {
-            console.error("Failed to sync cloud history tracking configurations:", error);
+    function autoPopulateDocName() {
+        const fileInput = document.getElementById('fileUpload');
+        const docNameInput = document.getElementById('docName');
+        
+        if (fileInput.files && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const fileNameWithExtension = file.name;
+            const cleanName = fileNameWithExtension.substring(0, fileNameWithExtension.lastIndexOf('.')) || fileNameWithExtension;
+            docNameInput.value = cleanName;
         }
     }
-    // --- Part 7 of 7 (Paste this directly below Part 6 to complete the file) ---
+
     async function processFormSubmission(event) {
         event.preventDefault();
+        
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
         let targetFileName = "";
-
-        try {
-            const getRes = await fetch(MOCKAPI_URL);
-            let allSubmissions = await getRes.json();
-
-            // --- SECURED: Isolates raw element index item zero directly to read parameters ---
-            if (fileInput.files && fileInput.files.length > 0) {
-                const uploadedFile = fileInput.files[0]; 
-                const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
-                const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
-                
-                if (!validExtensions.includes(fileExtension)) {
-                    fileErrorMsg.style.display = 'block';
-                    return;
-                }
-                fileErrorMsg.style.display = 'none';
-                const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
-                const inputYear = document.getElementById('year').value;
-                targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
-            } else if (editTargetId) {
-                const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
-                targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
-            } else {
+        
+        // Fetch current data from MockAPI
+        const getRes = await fetch(MOCKAPI_URL);
+        let allSubmissions = await getRes.json();
+        
+        if (fileInput.files.length > 0) {
+            const uploadedFile = fileInput.files[0];
+            const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
+            const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
+            
+            if (!validExtensions.includes(fileExtension)) {
                 fileErrorMsg.style.display = 'block';
                 return;
             }
+            fileErrorMsg.style.display = 'none';
+            const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
+            const inputYear = document.getElementById('year').value;
+            targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
+        } else if (editTargetId) {
+            const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
+            targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
+        } else {
+            fileErrorMsg.style.display = 'block';
+            return;
+        }
 
-            const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
-            const formatUploadedDate = phTime.getFullYear() + "-" + String(phTime.getMonth() + 1).padStart(2, '0') + "-" + String(phTime.getDate()).padStart(2, '0');
+        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const formatUploadedDate = phTime.toISOString().split('T')[0];
 
-            let payloadData = {};
-            let requestUrl = MOCKAPI_URL;
-            let httpMethod = "POST";
+        let payloadData = {};
+        let requestUrl = MOCKAPI_URL;
+        let httpMethod = "POST";
 
-            if (editTargetId) {
-                const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
-                if (recordToEdit) {
-                    requestUrl = `${MOCKAPI_URL}/${recordToEdit.id}`;
-                    httpMethod = "PUT";
-                    payloadData = {
-                        ...recordToEdit,
-                        docType: document.getElementById('docType').value,
-                        docName: document.getElementById('docName').value,
-                        quarter: document.getElementById('quarter').value,
-                        year: document.getElementById('year').value,
-                        dateIssued: document.getElementById('dateIssued').value,
-                        expirationDate: document.getElementById('expirationDate').value,
-                        remarks: document.getElementById('remarks').value,
-                        fileName: targetFileName,
-                        uploadedDate: formatUploadedDate,
-                        status: "pending"
-                    };
-                }
-            } else {
+        if (editTargetId) {
+            const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
+            if (recordToEdit) {
+                requestUrl = `${MOCKAPI_URL}/${recordToEdit.id}`;
+                httpMethod = "PUT";
                 payloadData = {
-                    submissionId: "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-                    branch: activeUser.branch,
-                    region: activeUser.region,
+                    ...recordToEdit,
                     docType: document.getElementById('docType').value,
                     docName: document.getElementById('docName').value,
                     quarter: document.getElementById('quarter').value,
@@ -437,28 +351,123 @@
                     remarks: document.getElementById('remarks').value,
                     fileName: targetFileName,
                     uploadedDate: formatUploadedDate,
-                    status: "pending",
-                    adminRemarks: ""
+                    status: "pending"
                 };
             }
-
-            await fetch(requestUrl, {
-                method: httpMethod,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payloadData)
-            });
-
-            document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong><br><br>Deployment Path Location:<br><code>\\\\documents\\\\${activeUser.region}\\\\${activeUser.branch}\\\\${targetFileName}</code>`;
-            document.getElementById('alertModal').style.display = 'flex';
-        } catch (error) {
-            console.error("Form transmission fault:", error);
+        } else {
+            payloadData = {
+                submissionId: "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                branch: activeUser.branch,
+                region: activeUser.region,
+                docType: document.getElementById('docType').value,
+                docName: document.getElementById('docName').value,
+                quarter: document.getElementById('quarter').value,
+                year: document.getElementById('year').value,
+                dateIssued: document.getElementById('dateIssued').value,
+                expirationDate: document.getElementById('expirationDate').value,
+                remarks: document.getElementById('remarks').value,
+                fileName: targetFileName,
+                uploadedDate: formatUploadedDate,
+                status: "pending",
+                adminRemarks: ""
+            };
         }
+
+        // Send to MockAPI
+        await fetch(requestUrl, {
+            method: httpMethod,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payloadData)
+        });
+
+        // Refresh data from MockAPI and display
+        await buildProgressAndHistoryViews();
+
+        document.getElementById('alertModalBody').innerHTML = `<strong>✅ SUCCESS: Document submitted to compliance cloud!</strong>`;
+        document.getElementById('alertModal').style.display = 'flex';
     }
 
-    function closeModalAndRedirect() {
-        document.getElementById('alertModal').style.display = 'none';
-        localStorage.removeItem('editTargetId');
-        window.location.href = 'regular_dashboard.html';
+    // --- Fetch from MockAPI and build display ---
+    async function buildProgressAndHistoryViews() {
+        try {
+            // Fetch all submissions from MockAPI
+            const response = await fetch(MOCKAPI_URL);
+            const allSubmissions = await response.json();
+            
+            // Filter by current user's branch
+            const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
+            
+            const matrixYearSelector = document.getElementById('matrixYearSelector');
+            const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
+
+            // Build matrix grid
+            const matrixContainer = document.getElementById('progressIndicatorGrid');
+            if (matrixContainer) {
+                matrixContainer.innerHTML = `
+                    <div class="matrix-header align-left">Compliance Requirement Category</div>
+                    <div class="matrix-header">Q1</div>
+                    <div class="matrix-header">Q2</div>
+                    <div class="matrix-header">Q3</div>
+                    <div class="matrix-header">Q4</div>
+                `;
+
+                const quartersLookup = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
+
+                documentTypesArray.forEach(type => {
+                    const labelCell = document.createElement('div');
+                    labelCell.className = "matrix-cell align-left";
+                    labelCell.textContent = type;
+                    matrixContainer.appendChild(labelCell);
+
+                    quartersLookup.forEach(q => {
+                        const cell = document.createElement('div');
+                        cell.className = "matrix-cell";
+                        
+                        const matchedRecord = branchRecords.find(r => 
+                            r.docType === type && r.quarter === q && r.year === selectedMatrixYear
+                        );
+                        
+                        if (matchedRecord) {
+                            let badgeClass = "p-pending";
+                            if (matchedRecord.status === "approved") badgeClass = "p-approved";
+                            if (matchedRecord.status === "declined") badgeClass = "p-declined";
+                            
+                            cell.innerHTML = `<span class="prog-badge ${badgeClass}">${matchedRecord.status || 'pending'}</span>`;
+                        } else {
+                            cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
+                        }
+                        matrixContainer.appendChild(cell);
+                    });
+                });
+            }
+
+            // Build history table
+            const historyBody = document.getElementById('historyTableBody');
+            if (historyBody) {
+                historyBody.innerHTML = '';
+
+                if (branchRecords.length === 0) {
+                    historyBody.innerHTML = `<tr><td colspan="5" class="no-data">No history items logged for this branch session.</td></tr>`;
+                    return;
+                }
+
+                branchRecords.sort((a, b) => b.uploadedDate.localeCompare(a.uploadedDate));
+
+                branchRecords.forEach(rec => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${rec.docType}</strong></td>
+                        <td>${rec.docName}</td>
+                        <td>${rec.quarter}</td>
+                        <td>${rec.year}</td>
+                        <td><code>${rec.uploadedDate}</code></td>
+                    `;
+                    historyBody.appendChild(tr);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching from MockAPI:', error);
+        }
     }
 
     document.addEventListener("DOMContentLoaded", async function() {
@@ -467,44 +476,72 @@
             window.location.href = 'welcome.html';
             return;
         }
-
+        
         activeUser = JSON.parse(userString);
-        document.getElementById('navProfileName').textContent = activeUser.email.split('@')[0];
-        document.getElementById('formTitleHeader').textContent = `AXA Compliance Filing Portal — ${activeUser.branch} Branch`;
-        document.getElementById('avatarCircle').textContent = activeUser.email.charAt(0).toUpperCase();
+        const cleanName = activeUser.email.split('@')[0];
+        
+        document.getElementById('navProfileName').textContent = cleanName;
+        document.getElementById('navProfileBranch').textContent = `${activeUser.region} - ${activeUser.branch} Branch`;
+        document.getElementById('avatarCircle').textContent = cleanName.charAt(0).toUpperCase();
 
-        await loadUploadHistoryAndMatrix();
+        // Setup year dropdowns
+        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const currentYear = phTime.getFullYear();
+        const nextYear = currentYear + 1;
 
+        const yearSelect = document.getElementById('year');
+        if (yearSelect) {
+            yearSelect.innerHTML = `
+                <option value="${currentYear}">${currentYear}</option>
+                <option value="${nextYear}">${nextYear}</option>
+            `;
+        }
+
+        const matrixYearSelector = document.getElementById('matrixYearSelector');
+        if (matrixYearSelector) {
+            matrixYearSelector.innerHTML = `
+                <option value="${currentYear}">${currentYear}</option>
+                <option value="${nextYear}">${nextYear}</option>
+            `;
+        }
+
+        // Handle edit mode
         editTargetId = localStorage.getItem('editTargetId');
         if (editTargetId) {
-            try {
-                const response = await fetch(MOCKAPI_URL);
-                const allSubmissions = await response.json();
-                const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
+            // Fetch specific record to edit
+            const allSubmissions = await (await fetch(MOCKAPI_URL)).json();
+            const recordToEdit = allSubmissions.find(d => d.submissionId === editTargetId);
+            
+            if (recordToEdit) {
+                document.getElementById('formPanelTitle').textContent = "Modify Compliance Document Entry Parameters";
+                document.getElementById('editModeIndicator').style.display = 'inline-block';
+                document.getElementById('submitActionBtn').textContent = "Update Document Entry";
+                document.getElementById('fileUpload').required = false;
                 
-                if (recordToEdit) {
-                    document.getElementById('docType').value = recordToEdit.docType;
-                    document.getElementById('docName').value = recordToEdit.docName;
-                    document.getElementById('quarter').value = recordToEdit.quarter;
-                    document.getElementById('year').value = recordToEdit.year;
-                    document.getElementById('dateIssued').value = recordToEdit.dateIssued;
-                    document.getElementById('expirationDate').value = recordToEdit.expirationDate;
-                    document.getElementById('remarks').value = recordToEdit.remarks || '';
-                    
-                    document.getElementById('formSubmitActionBtnText').textContent = "💾 Save Operational Changes";
-                    document.querySelector('.form-section h2').innerHTML = "✏️ Modify Compliance Requirement Entry";
-                    
-                    const fileInputWrapper = document.getElementById('fileUpload').parentNode;
-                    const existingNote = document.createElement('p');
-                    existingNote.style.cssText = "font-size:12px; color:#00008F; font-weight:600; margin-top:5px;";
-                    existingNote.innerHTML = `ℹ️ Active File attached: <code>${recordToEdit.fileName}</code> (Upload a new file only if changing attachments).`;
-                    fileInputWrapper.appendChild(existingNote);
+                document.getElementById('docType').value = recordToEdit.docType;
+                document.getElementById('docName').value = recordToEdit.docName;
+                document.getElementById('quarter').value = recordToEdit.quarter;
+                document.getElementById('year').value = recordToEdit.year;
+                document.getElementById('dateIssued').value = recordToEdit.dateIssued;
+                document.getElementById('expirationDate').value = recordToEdit.expirationDate;
+                document.getElementById('remarks').value = recordToEdit.remarks;
+                
+                if (matrixYearSelector) matrixYearSelector.value = recordToEdit.year;
+
+                const currentFileField = document.getElementById('fileCurrentValue');
+                if (currentFileField) {
+                    currentFileField.innerHTML = `Linked Attachment Asset: 📁 <code>${recordToEdit.fileName}</code> (Leave blank to keep original file structure)`;
+                    currentFileField.style.display = "block";
                 }
-            } catch (error) {
-                console.error("Failed to capture edit tracking values:", error);
             }
+            localStorage.removeItem('editTargetId');
+        } else {
+            const fileInput = document.getElementById('fileUpload');
+            if (fileInput) fileInput.required = true;
         }
+
+        // Load and display data
+        await buildProgressAndHistoryViews();
     });
 </script>
-</body>
 </html>
