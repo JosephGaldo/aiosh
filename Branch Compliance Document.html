@@ -131,10 +131,15 @@
                         <label for="docType">Document Type Rule Template</label>
                         <select id="docType" class="form-control" required onchange="syncAutomatedDocumentNameField()">
                             <option value="" disabled selected>Select Requirement Classification Category...</option>
-                            <option value="Safety Milestone Statement Log">Safety Milestone Statement Log (SMSL)</option>
-                            <option value="Emergency Action Guideline Proof">Emergency Action Guideline Proof (EAGP)</option>
-                            <option value="OSH Committee Structure Asset">OSH Committee Structure Asset (OCSA)</option>
-                            <option value="Medical Registry Audit File">Medical Registry Audit File (MRAF)</option>
+                            <option value="DOLE Registration">DOLE Registration</option>
+                            <option value="Designated Safety Officer">Designated Safety Officer</option>
+                            <option value="BOSH Training Certificate">BOSH Training Certificate</option>
+                            <option value="First Aid Training Certificate">First Aid Training Certificate</option>
+                            <option value="OSH Program">OSH Program</option>
+                            <option value="Fire Safety Inspection Certificate">Fire Safety Inspection Certificate</option>
+                            <option value="Mayor's Permit">Mayor's Permit</option>
+                            <option value="Occupancy Permit">Occupancy Permit</option>
+                            <option value="Contract of Lease">Contract of Lease</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -146,10 +151,10 @@
                         <label for="quarter">Target Filing Operational Fiscal Quarter</label>
                         <select id="quarter" class="form-control" required>
                             <option value="" disabled selected>Select Quarter...</option>
-                            <option value="1st Quarter">1st Quarter (Q1)</option>
-                            <option value="2nd Quarter">2nd Quarter (Q2)</option>
-                            <option value="3rd Quarter">3rd Quarter (Q3)</option>
-                            <option value="4th Quarter">4th Quarter (Q4)</option>
+                            <option value="1st Quarter">1st Quarter</option>
+                            <option value="2nd Quarter">2nd Quarter</option>
+                            <option value="3rd Quarter">3rd Quarter</option>
+                            <option value="4th Quarter">4th Quarter</option>
                         </select>
                     </div>
 
@@ -157,8 +162,8 @@
                         <label for="year">Filing Calendar Year Focus</label>
                         <select id="year" class="form-control" required>
                             <option value="" disabled selected>Select Year...</option>
-                            <option value="2026">2026 Fiscal Cycle</option>
-                            <option value="2027">2027 Fiscal Cycle</option>
+                            <option value="2026">2026</option>
+                            <option value="2027">2027</option>
                         </select>
                     </div>
 
@@ -194,21 +199,19 @@
                 </div>
             </form>
         </section>
-        <!-- --- POSITIONED CENTER: Progress Tracker Indicator Matrix Grid --- -->
         <section class="matrix-section">
             <div class="matrix-header-row">
                 <div class="matrix-title">Annual Branch Fiscal Progress Tracker Status Matrix</div>
             </div>
             <div class="matrix-grid" id="progressTrackingGridMatrix">
                 <div class="matrix-header align-left">Requirement Classification Category</div>
-                <div class="matrix-header">1st Quarter (Q1)</div>
-                <div class="matrix-header">2nd Quarter (Q2)</div>
-                <div class="matrix-header">3rd Quarter (Q3)</div>
-                <div class="matrix-header">4th Quarter (Q4)</div>
+                <div class="matrix-header">1st Quarter</div>
+                <div class="matrix-header">2nd Quarter</div>
+                <div class="matrix-header">3rd Quarter</div>
+                <div class="matrix-header">4th Quarter</div>
             </div>
         </section>
 
-        <!-- --- Lower History Logs Data Table Grid --- -->
         <section class="history-section">
             <div class="section-header" style="border-bottom: 1px solid #eeeeee; padding: 20px 30px;">
                 <h3 style="font-size: 15px; font-weight: 700; color: #00008F; text-transform: uppercase;">Filing Transmission History Log Stream</h3>
@@ -236,7 +239,6 @@
         </section>
     </main>
 
-    <!-- --- Global Transaction Validation Overlays --- -->
     <div class="modal-overlay" id="alertModal" style="display: none;">
         <div class="modal-card" style="border-top: 6px solid #2b8a3e;">
             <div class="modal-body" id="alertModalBody">
@@ -280,15 +282,9 @@
             nameInput.value = "";
             return;
         }
-        
-        let acronym = "";
-        if (typeSelect === "Safety Milestone Statement Log") acronym = "SMSL";
-        else if (typeSelect === "Emergency Action Guideline Proof") acronym = "EAGP";
-        else if (typeSelect === "OSH Committee Structure Asset") acronym = "OCSA";
-        else if (typeSelect === "Medical Registry Audit File") acronym = "MRAF";
-
+        const cleanStub = typeSelect.toUpperCase().replace(/\s+/g, '_');
         const shortBranch = activeUser.branch.toUpperCase().replace(/\s+/g, '_');
-        nameInput.value = `AXA_${shortBranch}_${acronym}_COMPLIANCE_RECORD`;
+        nameInput.value = `AXA_${shortBranch}_${cleanStub}_RECORD`;
     }
 
     async function loadUploadHistoryAndMatrix() {
@@ -298,7 +294,6 @@
             
             const branchRecords = allSubmissions.filter(doc => doc.branch === activeUser.branch);
             
-            // Render lower history log table
             const tbody = document.getElementById('historyLogsTableBody');
             tbody.innerHTML = '';
 
@@ -324,21 +319,19 @@
                 });
             }
 
-            // Render interactive matrix tracking indicator grid map
             const matrixContainer = document.getElementById('progressTrackingGridMatrix');
             matrixContainer.innerHTML = `
                 <div class="matrix-header align-left">Requirement Classification Category</div>
-                <div class="matrix-header">1st Quarter (Q1)</div>
-                <div class="matrix-header">2nd Quarter (Q2)</div>
-                <div class="matrix-header">3rd Quarter (Q3)</div>
-                <div class="matrix-header">4th Quarter (Q4)</div>
+                <div class="matrix-header">1st Quarter</div>
+                <div class="matrix-header">2nd Quarter</div>
+                <div class="matrix-header">3rd Quarter</div>
+                <div class="matrix-header">4th Quarter</div>
             `;
 
             const categories = [
-                "Safety Milestone Statement Log",
-                "Emergency Action Guideline Proof",
-                "OSH Committee Structure Asset",
-                "Medical Registry Audit File"
+                "DOLE Registration", "Designated Safety Officer", "BOSH Training Certificate",
+                "First Aid Training Certificate", "OSH Program", "Fire Safety Inspection Certificate",
+                "Mayor's Permit", "Occupancy Permit", "Contract of Lease"
             ];
 
             const quarters = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
@@ -371,52 +364,70 @@
             console.error("Failed to sync cloud history tracking configurations:", error);
         }
     }
-    // --- Block 2 of Part 6 (Paste this directly below Block 1 to complete the file) ---
+    // --- Part 7 of 7 (Paste this directly below Part 6 to complete the file) ---
     async function processFormSubmission(event) {
         event.preventDefault();
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
         let targetFileName = "";
 
-        const getRes = await fetch(MOCKAPI_URL);
-        let allSubmissions = await getRes.json();
+        try {
+            const getRes = await fetch(MOCKAPI_URL);
+            let allSubmissions = await getRes.json();
 
-        // --- FIXED FILE EXTRACTION POINTER WITH EXPLICIT INDEX ZERO BINDING ---
-        if (fileInput.files.length > 0) {
-            const uploadedFile = fileInput.files[0]; // CRITICAL FIX: Added index target [0] to extract the file object cleanly
-            const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
-            const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
-            
-            if (!validExtensions.includes(fileExtension)) {
+            // --- SECURED: Isolates raw element index item zero directly to read parameters ---
+            if (fileInput.files && fileInput.files.length > 0) {
+                const uploadedFile = fileInput.files[0]; 
+                const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
+                const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
+                
+                if (!validExtensions.includes(fileExtension)) {
+                    fileErrorMsg.style.display = 'block';
+                    return;
+                }
+                fileErrorMsg.style.display = 'none';
+                const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
+                const inputYear = document.getElementById('year').value;
+                targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
+            } else if (editTargetId) {
+                const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
+                targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
+            } else {
                 fileErrorMsg.style.display = 'block';
                 return;
             }
-            fileErrorMsg.style.display = 'none';
-            const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
-            const inputYear = document.getElementById('year').value;
-            targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
-        } else if (editTargetId) {
-            const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
-            targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
-        } else {
-            fileErrorMsg.style.display = 'block';
-            return;
-        }
 
-        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
-        const formatUploadedDate = phTime.getFullYear() + "-" + String(phTime.getMonth() + 1).padStart(2, '0') + "-" + String(phTime.getDate()).padStart(2, '0');
+            const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+            const formatUploadedDate = phTime.getFullYear() + "-" + String(phTime.getMonth() + 1).padStart(2, '0') + "-" + String(phTime.getDate()).padStart(2, '0');
 
-        let payloadData = {};
-        let requestUrl = MOCKAPI_URL;
-        let httpMethod = "POST";
+            let payloadData = {};
+            let requestUrl = MOCKAPI_URL;
+            let httpMethod = "POST";
 
-        if (editTargetId) {
-            const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
-            if (recordToEdit) {
-                requestUrl = `${MOCKAPI_URL}/${recordToEdit.id}`;
-                httpMethod = "PUT";
+            if (editTargetId) {
+                const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
+                if (recordToEdit) {
+                    requestUrl = `${MOCKAPI_URL}/${recordToEdit.id}`;
+                    httpMethod = "PUT";
+                    payloadData = {
+                        ...recordToEdit,
+                        docType: document.getElementById('docType').value,
+                        docName: document.getElementById('docName').value,
+                        quarter: document.getElementById('quarter').value,
+                        year: document.getElementById('year').value,
+                        dateIssued: document.getElementById('dateIssued').value,
+                        expirationDate: document.getElementById('expirationDate').value,
+                        remarks: document.getElementById('remarks').value,
+                        fileName: targetFileName,
+                        uploadedDate: formatUploadedDate,
+                        status: "pending"
+                    };
+                }
+            } else {
                 payloadData = {
-                    ...recordToEdit,
+                    submissionId: "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase(),
+                    branch: activeUser.branch,
+                    region: activeUser.region,
                     docType: document.getElementById('docType').value,
                     docName: document.getElementById('docName').value,
                     quarter: document.getElementById('quarter').value,
@@ -426,36 +437,22 @@
                     remarks: document.getElementById('remarks').value,
                     fileName: targetFileName,
                     uploadedDate: formatUploadedDate,
-                    status: "pending"
+                    status: "pending",
+                    adminRemarks: ""
                 };
             }
-        } else {
-            payloadData = {
-                submissionId: "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-                branch: activeUser.branch,
-                region: activeUser.region,
-                docType: document.getElementById('docType').value,
-                docName: document.getElementById('docName').value,
-                quarter: document.getElementById('quarter').value,
-                year: document.getElementById('year').value,
-                dateIssued: document.getElementById('dateIssued').value,
-                expirationDate: document.getElementById('expirationDate').value,
-                remarks: document.getElementById('remarks').value,
-                fileName: targetFileName,
-                uploadedDate: formatUploadedDate,
-                status: "pending",
-                adminRemarks: ""
-            };
+
+            await fetch(requestUrl, {
+                method: httpMethod,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadData)
+            });
+
+            document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong><br><br>Deployment Path Location:<br><code>\\\\documents\\\\${activeUser.region}\\\\${activeUser.branch}\\\\${targetFileName}</code>`;
+            document.getElementById('alertModal').style.display = 'flex';
+        } catch (error) {
+            console.error("Form transmission fault:", error);
         }
-
-        await fetch(requestUrl, {
-            method: httpMethod,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payloadData)
-        });
-
-        document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong><br><br>Deployment Path Location:<br><code>\\\\documents\\\\${activeUser.region}\\\\${activeUser.branch}\\\\${targetFileName}</code>`;
-        document.getElementById('alertModal').style.display = 'flex';
     }
 
     function closeModalAndRedirect() {
@@ -511,4 +508,3 @@
 </script>
 </body>
 </html>
-
