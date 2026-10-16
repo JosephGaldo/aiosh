@@ -116,12 +116,13 @@
     </header>
 
     <main class="main-container">
-        <a href="regular_dashboard.html" class="back-link">← Back to Dashboard</a>
+        <a href="regular_dashboard.html" class="back-link" onclick="clearEditContext()">← Back to Dashboard</a>
 
         <!-- --- POSITIONED FIRST: Quarter Progress Tracker Grid Matrix Section --- -->
         <section class="matrix-section">
             <div class="matrix-header-row">
                 <div class="matrix-title">Filing Status Tracker Grid</div>
+                <!-- Added interactive dynamic matrix calendar selector menu options -->
                 <div>
                     <label style="font-size:12px; font-weight:700; color:#444; text-transform:uppercase; margin-right:8px;">View Year Matrix:</label>
                     <select id="matrixYearSelector" class="form-control" style="display:inline-block; width:120px; padding:6px 10px;" onchange="buildProgressAndHistoryViews()"></select>
@@ -206,7 +207,7 @@
                 </div>
 
                 <div class="form-footer">
-                    <a href="regular_dashboard.html" class="btn btn-secondary">Cancel</a>
+                    <a href="regular_dashboard.html" class="btn btn-secondary" onclick="clearEditContext()">Cancel</a>
                     <button type="submit" id="submitActionBtn" class="btn btn-primary">Submit Document</button>
                 </div>
             </form>
@@ -230,7 +231,7 @@
                     </thead>
                     <tbody id="historyTableBody">
                         <tr>
-                            <td colspan="5" class="no-data">Loading...</td>
+                            <td colspan="5" class="no-data">No history items logged for this branch session.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -254,15 +255,15 @@
 <script>
     let activeUser = null;
     let editTargetId = null;
-    const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
-    
     const documentTypesArray = [
         "DOLE Registration", "Designated Safety Officer", "BOSH Training Certificate",
         "First Aid Training Certificate", "OSH Program", "Fire Safety Inspection Certificate",
         "Mayor's Permit", "Occupancy Permit", "Contract of Lease"
     ];
 
+    function clearEditContext() { localStorage.removeItem('editTargetId'); }
     function dismissAlertAndRedirect() {
+        clearEditContext();
         window.location.href = 'regular_dashboard.html';
     }
 
@@ -296,14 +297,14 @@
         }
     }
 
-    async function processFormSubmission(event) {
+     async function processFormSubmission(event) {
         event.preventDefault();
+        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
         
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
         let targetFileName = "";
         
-        // Fetch current data from MockAPI
         const getRes = await fetch(MOCKAPI_URL);
         let allSubmissions = await getRes.json();
         
@@ -373,104 +374,91 @@
             };
         }
 
-        // Send to MockAPI
         await fetch(requestUrl, {
             method: httpMethod,
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payloadData)
         });
 
-        // Refresh data from MockAPI and display
-        await buildProgressAndHistoryViews();
-
-        document.getElementById('alertModalBody').innerHTML = `<strong>✅ SUCCESS: Document submitted to compliance cloud!</strong>`;
+        document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong>`;
         document.getElementById('alertModal').style.display = 'flex';
     }
+</script>
+<script>
+    // --- UPDATED SYSTEM MATRIX ENGINE: Now parses calendar lookup variations matching the selected option ---
+    function buildProgressAndHistoryViews() {
+        const allSubmissions = JSON.parse(localStorage.getItem('aiosh_submissions')) || [];
+        const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
+        
+        // Dynamic lookup year parameter extracted straight from user interface toggle dropdown menu element
+        const matrixYearSelector = document.getElementById('matrixYearSelector');
+        const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
 
-    // --- Fetch from MockAPI and build display ---
-    async function buildProgressAndHistoryViews() {
-        try {
-            // Fetch all submissions from MockAPI
-            const response = await fetch(MOCKAPI_URL);
-            const allSubmissions = await response.json();
-            
-            // Filter by current user's branch
-            const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
-            
-            const matrixYearSelector = document.getElementById('matrixYearSelector');
-            const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
+        const matrixContainer = document.getElementById('progressIndicatorGrid');
+        if (matrixContainer) {
+            matrixContainer.innerHTML = `
+                <div class="matrix-header align-left">Compliance Requirement Category</div>
+                <div class="matrix-header">Q1</div>
+                <div class="matrix-header">Q2</div>
+                <div class="matrix-header">Q3</div>
+                <div class="matrix-header">Q4</div>
+            `;
 
-            // Build matrix grid
-            const matrixContainer = document.getElementById('progressIndicatorGrid');
-            if (matrixContainer) {
-                matrixContainer.innerHTML = `
-                    <div class="matrix-header align-left">Compliance Requirement Category</div>
-                    <div class="matrix-header">Q1</div>
-                    <div class="matrix-header">Q2</div>
-                    <div class="matrix-header">Q3</div>
-                    <div class="matrix-header">Q4</div>
+            const quartersLookup = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
+
+            documentTypesArray.forEach(type => {
+                const labelCell = document.createElement('div');
+                labelCell.className = "matrix-cell align-left";
+                labelCell.textContent = type;
+                matrixContainer.appendChild(labelCell);
+
+                quartersLookup.forEach(q => {
+                    const cell = document.createElement('div');
+                    cell.className = "matrix-cell";
+                    
+                    // Match submissions filtered by category, quarter, and the explicitly selected Matrix year
+                    const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && r.year === selectedMatrixYear);
+                    
+                    if (matchedRecord) {
+                        let badgeClass = "p-pending";
+                        if (matchedRecord.status === "approved") badgeClass = "p-approved";
+                        if (matchedRecord.status === "declined") badgeClass = "p-declined";
+                        
+                        cell.innerHTML = `<span class="prog-badge ${badgeClass}">${matchedRecord.status || 'pending'}</span>`;
+                    } else {
+                        cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
+                    }
+                    matrixContainer.appendChild(cell);
+                });
+            });
+        }
+
+        const historyBody = document.getElementById('historyTableBody');
+        if (historyBody) {
+            historyBody.innerHTML = '';
+
+            if (branchRecords.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="5" class="no-data">No history items logged for this branch session.</td></tr>`;
+                return;
+            }
+
+            branchRecords.sort((a, b) => b.uploadedDate.localeCompare(a.uploadedDate));
+
+            branchRecords.forEach(rec => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${rec.docType}</strong></td>
+                    <td>${rec.docName}</td>
+                    <td>${rec.quarter}</td>
+                    <td>${rec.year}</td>
+                    <td><code>${rec.uploadedDate}</code></td>
                 `;
-
-                const quartersLookup = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
-
-                documentTypesArray.forEach(type => {
-                    const labelCell = document.createElement('div');
-                    labelCell.className = "matrix-cell align-left";
-                    labelCell.textContent = type;
-                    matrixContainer.appendChild(labelCell);
-
-                    quartersLookup.forEach(q => {
-                        const cell = document.createElement('div');
-                        cell.className = "matrix-cell";
-                        
-                        const matchedRecord = branchRecords.find(r => 
-                            r.docType === type && r.quarter === q && r.year === selectedMatrixYear
-                        );
-                        
-                        if (matchedRecord) {
-                            let badgeClass = "p-pending";
-                            if (matchedRecord.status === "approved") badgeClass = "p-approved";
-                            if (matchedRecord.status === "declined") badgeClass = "p-declined";
-                            
-                            cell.innerHTML = `<span class="prog-badge ${badgeClass}">${matchedRecord.status || 'pending'}</span>`;
-                        } else {
-                            cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
-                        }
-                        matrixContainer.appendChild(cell);
-                    });
-                });
-            }
-
-            // Build history table
-            const historyBody = document.getElementById('historyTableBody');
-            if (historyBody) {
-                historyBody.innerHTML = '';
-
-                if (branchRecords.length === 0) {
-                    historyBody.innerHTML = `<tr><td colspan="5" class="no-data">No history items logged for this branch session.</td></tr>`;
-                    return;
-                }
-
-                branchRecords.sort((a, b) => b.uploadedDate.localeCompare(a.uploadedDate));
-
-                branchRecords.forEach(rec => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><strong>${rec.docType}</strong></td>
-                        <td>${rec.docName}</td>
-                        <td>${rec.quarter}</td>
-                        <td>${rec.year}</td>
-                        <td><code>${rec.uploadedDate}</code></td>
-                    `;
-                    historyBody.appendChild(tr);
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching from MockAPI:', error);
+                historyBody.appendChild(tr);
+            });
         }
     }
 
-    document.addEventListener("DOMContentLoaded", async function() {
+    document.addEventListener("DOMContentLoaded", function() {
         const userString = localStorage.getItem('currentUser');
         if (!userString) {
             window.location.href = 'welcome.html';
@@ -484,10 +472,10 @@
         document.getElementById('navProfileBranch').textContent = `${activeUser.region} - ${activeUser.branch} Branch`;
         document.getElementById('avatarCircle').textContent = cleanName.charAt(0).toUpperCase();
 
-        // Setup year dropdowns
+        // 1. SETUP DYNAMIC DROP-DOWN OPTIONS (BOTH MATRIX AND FORM FIELDS)
         const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
-        const currentYear = phTime.getFullYear();
-        const nextYear = currentYear + 1;
+        const currentYear = phTime.getFullYear(); // Derived explicitly as 2026
+        const nextYear = currentYear + 1;         // Derived explicitly as 2027
 
         const yearSelect = document.getElementById('year');
         if (yearSelect) {
@@ -505,11 +493,10 @@
             `;
         }
 
-        // Handle edit mode
+        // 2. PROCESS EDIT-MODE CONFIGURATIONS
         editTargetId = localStorage.getItem('editTargetId');
         if (editTargetId) {
-            // Fetch specific record to edit
-            const allSubmissions = await (await fetch(MOCKAPI_URL)).json();
+            const allSubmissions = JSON.parse(localStorage.getItem('aiosh_submissions')) || [];
             const recordToEdit = allSubmissions.find(d => d.submissionId === editTargetId);
             
             if (recordToEdit) {
@@ -526,6 +513,7 @@
                 document.getElementById('expirationDate').value = recordToEdit.expirationDate;
                 document.getElementById('remarks').value = recordToEdit.remarks;
                 
+                // Synchronize tracker matrix layout to reflect document filing context target year automatically
                 if (matrixYearSelector) matrixYearSelector.value = recordToEdit.year;
 
                 const currentFileField = document.getElementById('fileCurrentValue');
@@ -534,14 +522,13 @@
                     currentFileField.style.display = "block";
                 }
             }
-            localStorage.removeItem('editTargetId');
         } else {
             const fileInput = document.getElementById('fileUpload');
             if (fileInput) fileInput.required = true;
         }
 
-        // Load and display data
-        await buildProgressAndHistoryViews();
+        // 3. BUILD SYSTEM LOG VIEWS
+        buildProgressAndHistoryViews();
     });
 </script>
 </html>
