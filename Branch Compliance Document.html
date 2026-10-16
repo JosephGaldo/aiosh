@@ -406,10 +406,13 @@
             
             const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
             console.log('🏢 Branch records:', branchRecords.length);
+            console.log('📄 Sample record:', branchRecords[0]);
             
             // Dynamic lookup year parameter extracted straight from user interface toggle dropdown menu element
             const matrixYearSelector = document.getElementById('matrixYearSelector');
             const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
+            console.log('📅 Selected Matrix Year:', selectedMatrixYear);
+            console.log('📅 Year in data:', branchRecords[0]?.year, '| Type:', typeof branchRecords[0]?.year);
 
             const matrixContainer = document.getElementById('progressIndicatorGrid');
             if (matrixContainer) {
@@ -434,7 +437,13 @@
                         cell.className = "matrix-cell";
                         
                         // Match submissions filtered by category, quarter, and the explicitly selected Matrix year
-                        const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && r.year === selectedMatrixYear);
+                        const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && String(r.year) === String(selectedMatrixYear));
+                        
+                        // Debug first row only
+                        if (type === documentTypesArray[0] && q === "1st Quarter") {
+                            console.log('🔍 Matching:', {type, quarter: q, year: selectedMatrixYear});
+                            console.log('   Record found:', matchedRecord);
+                        }
                         
                         if (matchedRecord) {
                             let badgeClass = "p-pending";
