@@ -391,10 +391,21 @@
     // --- UPDATED SYSTEM MATRIX ENGINE: Now fetches directly from MockAPI ---
     async function buildProgressAndHistoryViews() {
         try {
+            console.log('🔄 Fetching from MockAPI:', MOCKAPI_URL);
+            console.log('📍 Current user branch:', activeUser.branch);
+            
             // Fetch all submissions directly from MockAPI
             const response = await fetch(MOCKAPI_URL);
+            if (!response.ok) {
+                throw new Error(`MockAPI error: ${response.status}`);
+            }
+            
             const allSubmissions = await response.json();
+            console.log('✅ MockAPI Response:', allSubmissions);
+            console.log('📊 Total records:', allSubmissions.length);
+            
             const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
+            console.log('🏢 Branch records:', branchRecords.length);
             
             // Dynamic lookup year parameter extracted straight from user interface toggle dropdown menu element
             const matrixYearSelector = document.getElementById('matrixYearSelector');
@@ -463,7 +474,11 @@
                 });
             }
         } catch (error) {
-            console.error('Error fetching from MockAPI:', error);
+            console.error('❌ Error fetching from MockAPI:', error);
+            const historyBody = document.getElementById('historyTableBody');
+            if (historyBody) {
+                historyBody.innerHTML = `<tr><td colspan="5" class="no-data">Error loading data: ${error.message}</td></tr>`;
+            }
         }
     }
 
@@ -475,6 +490,8 @@
         }
         
         activeUser = JSON.parse(userString);
+        console.log('👤 Active User loaded:', activeUser);
+        
         const cleanName = activeUser.email.split('@')[0];
         
         document.getElementById('navProfileName').textContent = cleanName;
@@ -538,7 +555,9 @@
         }
 
         // 3. BUILD SYSTEM LOG VIEWS
+        console.log('📋 Calling buildProgressAndHistoryViews...');
         await buildProgressAndHistoryViews();
+        console.log('✨ Page fully loaded');
     });
 </script>
 </html>
