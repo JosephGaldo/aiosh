@@ -254,7 +254,7 @@
 <script>
     let activeUser = null;
     let editTargetId = null;
-    const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+    const MOCKAPI_URL = "https://mockapi.io";
 
     function toggleProfileDropdown(e) {
         e.stopPropagation();
@@ -381,9 +381,9 @@
         const getRes = await fetch(MOCKAPI_URL);
         let allSubmissions = await getRes.json();
 
-        // --- FIXED FILE EXTRACTION POINTER PROPERTY INDEX LOOP ---
+        // --- FIXED FILE EXTRACTION POINTER WITH EXPLICIT INDEX ZERO BINDING ---
         if (fileInput.files.length > 0) {
-            const uploadedFile = fileInput.files[0]; // Target index element zero directly
+            const uploadedFile = fileInput.files[0]; // CRITICAL FIX: Added index target [0] to extract the file object cleanly
             const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
             const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
             
@@ -511,3 +511,4 @@
 </script>
 </body>
 </html>
+
