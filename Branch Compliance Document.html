@@ -255,6 +255,7 @@
 <script>
     let activeUser = null;
     let editTargetId = null;
+    const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
     const documentTypesArray = [
         "DOLE Registration", "Designated Safety Officer", "BOSH Training Certificate",
         "First Aid Training Certificate", "OSH Program", "Fire Safety Inspection Certificate",
@@ -297,9 +298,8 @@
         }
     }
 
-     async function processFormSubmission(event) {
+    async function processFormSubmission(event) {
         event.preventDefault();
-        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
         
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
@@ -380,85 +380,94 @@
             body: JSON.stringify(payloadData)
         });
 
+        // *** FIXED: Refresh data from MockAPI and update display ***
+        await buildProgressAndHistoryViews();
+
         document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong>`;
         document.getElementById('alertModal').style.display = 'flex';
     }
 </script>
 <script>
-    // --- UPDATED SYSTEM MATRIX ENGINE: Now parses calendar lookup variations matching the selected option ---
-    function buildProgressAndHistoryViews() {
-        const allSubmissions = JSON.parse(localStorage.getItem('aiosh_submissions')) || [];
-        const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
-        
-        // Dynamic lookup year parameter extracted straight from user interface toggle dropdown menu element
-        const matrixYearSelector = document.getElementById('matrixYearSelector');
-        const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
+    // --- UPDATED SYSTEM MATRIX ENGINE: Now fetches directly from MockAPI ---
+    async function buildProgressAndHistoryViews() {
+        try {
+            // Fetch all submissions directly from MockAPI
+            const response = await fetch(MOCKAPI_URL);
+            const allSubmissions = await response.json();
+            const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
+            
+            // Dynamic lookup year parameter extracted straight from user interface toggle dropdown menu element
+            const matrixYearSelector = document.getElementById('matrixYearSelector');
+            const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
 
-        const matrixContainer = document.getElementById('progressIndicatorGrid');
-        if (matrixContainer) {
-            matrixContainer.innerHTML = `
-                <div class="matrix-header align-left">Compliance Requirement Category</div>
-                <div class="matrix-header">Q1</div>
-                <div class="matrix-header">Q2</div>
-                <div class="matrix-header">Q3</div>
-                <div class="matrix-header">Q4</div>
-            `;
+            const matrixContainer = document.getElementById('progressIndicatorGrid');
+            if (matrixContainer) {
+                matrixContainer.innerHTML = `
+                    <div class="matrix-header align-left">Compliance Requirement Category</div>
+                    <div class="matrix-header">Q1</div>
+                    <div class="matrix-header">Q2</div>
+                    <div class="matrix-header">Q3</div>
+                    <div class="matrix-header">Q4</div>
+                `;
 
-            const quartersLookup = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
+                const quartersLookup = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
 
-            documentTypesArray.forEach(type => {
-                const labelCell = document.createElement('div');
-                labelCell.className = "matrix-cell align-left";
-                labelCell.textContent = type;
-                matrixContainer.appendChild(labelCell);
+                documentTypesArray.forEach(type => {
+                    const labelCell = document.createElement('div');
+                    labelCell.className = "matrix-cell align-left";
+                    labelCell.textContent = type;
+                    matrixContainer.appendChild(labelCell);
 
-                quartersLookup.forEach(q => {
-                    const cell = document.createElement('div');
-                    cell.className = "matrix-cell";
-                    
-                    // Match submissions filtered by category, quarter, and the explicitly selected Matrix year
-                    const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && r.year === selectedMatrixYear);
-                    
-                    if (matchedRecord) {
-                        let badgeClass = "p-pending";
-                        if (matchedRecord.status === "approved") badgeClass = "p-approved";
-                        if (matchedRecord.status === "declined") badgeClass = "p-declined";
+                    quartersLookup.forEach(q => {
+                        const cell = document.createElement('div');
+                        cell.className = "matrix-cell";
                         
-                        cell.innerHTML = `<span class="prog-badge ${badgeClass}">${matchedRecord.status || 'pending'}</span>`;
-                    } else {
-                        cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
-                    }
-                    matrixContainer.appendChild(cell);
+                        // Match submissions filtered by category, quarter, and the explicitly selected Matrix year
+                        const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && r.year === selectedMatrixYear);
+                        
+                        if (matchedRecord) {
+                            let badgeClass = "p-pending";
+                            if (matchedRecord.status === "approved") badgeClass = "p-approved";
+                            if (matchedRecord.status === "declined") badgeClass = "p-declined";
+                            
+                            cell.innerHTML = `<span class="prog-badge ${badgeClass}">${matchedRecord.status || 'pending'}</span>`;
+                        } else {
+                            cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
+                        }
+                        matrixContainer.appendChild(cell);
+                    });
                 });
-            });
-        }
-
-        const historyBody = document.getElementById('historyTableBody');
-        if (historyBody) {
-            historyBody.innerHTML = '';
-
-            if (branchRecords.length === 0) {
-                historyBody.innerHTML = `<tr><td colspan="5" class="no-data">No history items logged for this branch session.</td></tr>`;
-                return;
             }
 
-            branchRecords.sort((a, b) => b.uploadedDate.localeCompare(a.uploadedDate));
+            const historyBody = document.getElementById('historyTableBody');
+            if (historyBody) {
+                historyBody.innerHTML = '';
 
-            branchRecords.forEach(rec => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${rec.docType}</strong></td>
-                    <td>${rec.docName}</td>
-                    <td>${rec.quarter}</td>
-                    <td>${rec.year}</td>
-                    <td><code>${rec.uploadedDate}</code></td>
-                `;
-                historyBody.appendChild(tr);
-            });
+                if (branchRecords.length === 0) {
+                    historyBody.innerHTML = `<tr><td colspan="5" class="no-data">No history items logged for this branch session.</td></tr>`;
+                    return;
+                }
+
+                branchRecords.sort((a, b) => b.uploadedDate.localeCompare(a.uploadedDate));
+
+                branchRecords.forEach(rec => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${rec.docType}</strong></td>
+                        <td>${rec.docName}</td>
+                        <td>${rec.quarter}</td>
+                        <td>${rec.year}</td>
+                        <td><code>${rec.uploadedDate}</code></td>
+                    `;
+                    historyBody.appendChild(tr);
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching from MockAPI:', error);
         }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", async function() {
         const userString = localStorage.getItem('currentUser');
         if (!userString) {
             window.location.href = 'welcome.html';
@@ -496,7 +505,8 @@
         // 2. PROCESS EDIT-MODE CONFIGURATIONS
         editTargetId = localStorage.getItem('editTargetId');
         if (editTargetId) {
-            const allSubmissions = JSON.parse(localStorage.getItem('aiosh_submissions')) || [];
+            // Fetch from MockAPI for edit mode
+            const allSubmissions = await (await fetch(MOCKAPI_URL)).json();
             const recordToEdit = allSubmissions.find(d => d.submissionId === editTargetId);
             
             if (recordToEdit) {
@@ -528,7 +538,7 @@
         }
 
         // 3. BUILD SYSTEM LOG VIEWS
-        buildProgressAndHistoryViews();
+        await buildProgressAndHistoryViews();
     });
 </script>
 </html>
