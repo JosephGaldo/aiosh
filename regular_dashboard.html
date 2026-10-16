@@ -465,38 +465,75 @@
 
     async function executeRowDelete() {
         try {
-            console.log('🗑️ Deleting record:', globalActiveIndex);
+            console.log('🗑️ START DELETE PROCESS');
+            console.log('📌 Record to delete (submissionId):', globalActiveIndex);
             
             // Fetch all records to find the one with matching submissionId
+            console.log('🔄 Fetching all records from MockAPI...');
             const response = await fetch(MOCKAPI_URL);
+            
+            if (!response.ok) {
+                throw new Error(`Fetch failed with status: ${response.status}`);
+            }
+            
             const allSubmissions = await response.json();
+            console.log('✅ Fetched', allSubmissions.length, 'records from MockAPI');
+            console.log('📋 All records:', allSubmissions);
             
             // Find the record with matching submissionId to get its MockAPI ID
-            const recordToDelete = allSubmissions.find(doc => doc.submissionId === globalActiveIndex);
+            console.log('🔍 Looking for record with submissionId:', globalActiveIndex);
+            const recordToDelete = allSubmissions.find(doc => {
+                console.log('  Checking:', doc.submissionId, 'vs', globalActiveIndex, '→', doc.submissionId === globalActiveIndex);
+                return doc.submissionId === globalActiveIndex;
+            });
             
-            if (recordToDelete && recordToDelete.id) {
-                console.log('📄 Found record with ID:', recordToDelete.id);
-                
-                // Delete from MockAPI using the record's id
-                const deleteResponse = await fetch(`${MOCKAPI_URL}/${recordToDelete.id}`, {
-                    method: 'DELETE'
-                });
-                
-                if (deleteResponse.ok) {
-                    console.log('✅ Record deleted successfully from MockAPI');
-                    closeModal('confirmModal');
-                    await applyFiltersAndSort();
-                } else {
-                    throw new Error('Delete request failed');
-                }
-            } else {
-                console.error('❌ Record not found for deletion:', globalActiveIndex);
-                alert('Error: Record could not be found');
+            console.log('Found record:', recordToDelete);
+            
+            if (!recordToDelete) {
+                console.error('❌ Record not found at all');
+                alert('Error: Record not found in database');
                 closeModal('confirmModal');
+                return;
             }
+            
+            if (!recordToDelete.id) {
+                console.error('❌ Record found but has no MockAPI ID');
+                alert('Error: Record missing ID');
+                closeModal('confirmModal');
+                return;
+            }
+            
+            console.log('📄 Found record with MockAPI ID:', recordToDelete.id);
+            console.log('🔗 Delete URL:', `${MOCKAPI_URL}/${recordToDelete.id}`);
+            
+            // Delete from MockAPI using the record's id
+            console.log('📤 Sending DELETE request...');
+            const deleteResponse = await fetch(`${MOCKAPI_URL}/${recordToDelete.id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            console.log('📥 Delete response status:', deleteResponse.status);
+            console.log('📥 Delete response ok:', deleteResponse.ok);
+            
+            if (!deleteResponse.ok) {
+                const errorText = await deleteResponse.text();
+                console.error('❌ Delete failed. Response:', errorText);
+                throw new Error(`Delete failed with status ${deleteResponse.status}: ${errorText}`);
+            }
+            
+            const deleteResult = await deleteResponse.json();
+            console.log('✅ Delete successful! Response:', deleteResult);
+            
+            closeModal('confirmModal');
+            console.log('🔄 Refreshing dashboard...');
+            await applyFiltersAndSort();
+            console.log('✨ Delete process complete!');
+            
         } catch (error) {
-            console.error('❌ Delete failed:', error);
-            alert('Error deleting record: ' + error.message);
+            console.error('❌ FATAL ERROR:', error);
+            console.error('Stack:', error.stack);
+            alert('Error deleting record:\n\n' + error.message);
             closeModal('confirmModal');
         }
     }
