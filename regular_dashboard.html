@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AYOSH - Regular Dashboard</title>
+    <title>AIOSH - Regular Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #f8f9fa; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
@@ -11,8 +11,8 @@
         /* --- Header Navigation Banner --- */
         .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .nav-left { display: flex; align-items: center; gap: 15px; }
-        .ayosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
-        .ayosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
         .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
         
         /* --- Interactive Dropdown Panels --- */
@@ -109,9 +109,9 @@
     <!-- --- Header Navigation Area --- -->
     <header class="navbar">
         <div class="nav-left">
-            <div class="ayosh-logo-container">
-                <span class="ayosh-logo-text">AYOSH</span>
-                <span class="ayosh-tagline">Compliance Platform</span>
+            <div class="aiosh-logo-container">
+                <span class="aiosh-logo-text">AIOSH</span>
+                <span class="aiosh-tagline">Compliance Platform</span>
             </div>
         </div>
         <div class="nav-right">
@@ -230,9 +230,9 @@
     <div class="modal-overlay" id="infoModal">
         <div class="modal-card" style="border-top: 6px solid #00008F;">
             <div class="modal-body" style="padding: 40px; text-align: justify;">
-                <h3 style="color:#00008F; font-size:22px; margin-bottom:15px; font-weight:900; letter-spacing:1px; text-align:center;">AYOSH</h3>
+                <h3 style="color:#00008F; font-size:22px; margin-bottom:15px; font-weight:900; letter-spacing:1px; text-align:center;">AIOSH</h3>
                 <p style="font-size:11px; text-transform:uppercase; color:#666; font-weight:bold; margin-bottom:20px; letter-spacing:1px; text-align:center;">Operational Safety and Health Platform</p>
-                AYOSH is a centralized compliance platform that enables branches to upload OSH requirements into a standardized system, automatically categorizes submissions, tracks compliance in real-time via AI-powered dashboards (leveraging Secure GPT), and generates Executive-ready reports in minutes. The system includes auto-notifications to keep branches on track and provides Corp Sec with actionable insights for strategic decision-making.
+                AIOSH is a centralized compliance platform that enables branches to upload OSH requirements into a standardized system, automatically categorizes submissions, tracks compliance in real-time via AI-powered dashboards (leveraging Secure GPT), and generates Executive-ready reports in minutes. The system includes auto-notifications to keep branches on track and provides Corp Sec with actionable insights for strategic decision-making.
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="closeModal('infoModal')">Proceed to Dashboard</button>
@@ -276,7 +276,7 @@
     });
 
     function triggerSignOut() {
-        if(confirm("Are you sure you want to sign out from the AYOSH platform?")) {
+        if(confirm("Are you sure you want to sign out from the AIOSH platform?")) {
             localStorage.removeItem('currentUser');
             window.location.href = 'welcome.html';
         }
@@ -555,7 +555,7 @@
         const userString = localStorage.getItem('currentUser');
         if (userString && modalId === 'infoModal') {
             const user = JSON.parse(userString);
-            sessionStorage.setItem('ayosh_modal_seen_' + user.email, 'true');
+            sessionStorage.setItem('aiosh_modal_seen_' + user.email, 'true');
         }
     }
 
@@ -574,7 +574,7 @@
             document.getElementById('tableTitle').textContent = `Submitted Compliance Requirements — ${user.branch} Branch`;
             document.getElementById('avatarCircle').textContent = cleanName.charAt(0).toUpperCase();
 
-            const hasSeenModal = sessionStorage.getItem('ayosh_modal_seen_' + user.email);
+            const hasSeenModal = sessionStorage.getItem('aiosh_modal_seen_' + user.email);
             if (hasSeenModal === 'true') {
                 document.getElementById('infoModal').style.display = 'none';
             } else {
