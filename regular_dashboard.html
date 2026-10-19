@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIOSH - Regular Dashboard</title>
+    <title>AYOSH - Regular Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #f8f9fa; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
@@ -11,8 +11,8 @@
         /* --- Header Navigation Banner --- */
         .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .nav-left { display: flex; align-items: center; gap: 15px; }
-        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
-        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .ayosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .ayosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
         .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
         
         /* --- Interactive Dropdown Panels --- */
@@ -109,9 +109,9 @@
     <!-- --- Header Navigation Area --- -->
     <header class="navbar">
         <div class="nav-left">
-            <div class="aiosh-logo-container">
-                <span class="aiosh-logo-text">AIOSH</span>
-                <span class="aiosh-tagline">Compliance Platform</span>
+            <div class="ayosh-logo-container">
+                <span class="ayosh-logo-text">AYOSH</span>
+                <span class="ayosh-tagline">Compliance Platform</span>
             </div>
         </div>
         <div class="nav-right">
@@ -230,9 +230,9 @@
     <div class="modal-overlay" id="infoModal">
         <div class="modal-card" style="border-top: 6px solid #00008F;">
             <div class="modal-body" style="padding: 40px; text-align: justify;">
-                <h3 style="color:#00008F; font-size:22px; margin-bottom:15px; font-weight:900; letter-spacing:1px; text-align:center;">AIOSH</h3>
+                <h3 style="color:#00008F; font-size:22px; margin-bottom:15px; font-weight:900; letter-spacing:1px; text-align:center;">AYOSH</h3>
                 <p style="font-size:11px; text-transform:uppercase; color:#666; font-weight:bold; margin-bottom:20px; letter-spacing:1px; text-align:center;">Operational Safety and Health Platform</p>
-                AIOSH is a centralized compliance platform that enables branches to upload OSH requirements into a standardized system, automatically categorizes submissions, tracks compliance in real-time via AI-powered dashboards (leveraging Secure GPT), and generates Executive-ready reports in minutes. The system includes auto-notifications to keep branches on track and provides Corp Sec with actionable insights for strategic decision-making.
+                AYOSH is a centralized compliance platform that enables branches to upload OSH requirements into a standardized system, automatically categorizes submissions, tracks compliance in real-time via AI-powered dashboards (leveraging Secure GPT), and generates Executive-ready reports in minutes. The system includes auto-notifications to keep branches on track and provides Corp Sec with actionable insights for strategic decision-making.
             </div>
             <div class="modal-footer">
                 <button class="btn btn-primary" onclick="closeModal('infoModal')">Proceed to Dashboard</button>
@@ -262,57 +262,6 @@
     let activeFieldSort = "docType"; 
     let globalActiveIndex = null;
     const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
-    // ---- GitHub file storage (files are saved as one JSON file per submission) ----
-    const GITHUB_OWNER  = "JosephGaldo";
-    const GITHUB_REPO   = "private";
-    const GITHUB_BRANCH = "main";
-    const GITHUB_FOLDER = "submissions-files";
-    // Token (read-only: fine-grained token, ONLY this repo, Contents = Read-only)
-    const GITHUB_TOKEN  = "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";
-
-    function githubUrl(path) {
-        return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
-    }
-    function githubHeaders(accept) {
-        return {
-            'Authorization': `Bearer ${GITHUB_TOKEN}`,
-            'Accept': accept || 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-        };
-    }
-
-    // Open a stored file in a new tab. Reads the JSON file from GitHub using the record's githubPath.
-    async function openStoredFile(recordId) {
-        const win = window.open('', '_blank'); // open now so the popup isn't blocked after the awaits
-        try {
-            const res = await fetch(`${MOCKAPI_URL}/${recordId}`);
-            const rec = await res.json();
-
-            let dataUrl = rec.fileData; // older records saved directly in MockAPI
-            if (!dataUrl && rec.githubPath) {
-                const gh = await fetch(`${githubUrl(rec.githubPath)}?ref=${GITHUB_BRANCH}`, {
-                    headers: githubHeaders('application/vnd.github.raw+json'),
-                    cache: 'no-store'
-                });
-                if (!gh.ok) throw new Error(`GitHub error ${gh.status}. Check the token, repo name and file path.`);
-                const payload = await gh.json();
-                dataUrl = payload.fileData;
-            }
-            if (!dataUrl) throw new Error('No file stored for this record.');
-
-            const [meta, b64] = dataUrl.split(',');
-            const mime = (meta.match(/data:(.*?);base64/) || [])[1] || rec.fileMime || 'application/octet-stream';
-            const bytes = atob(b64);
-            const arr = new Uint8Array(bytes.length);
-            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-            const url = URL.createObjectURL(new Blob([arr], { type: mime }));
-            if (win) win.location.href = url; else window.open(url, '_blank');
-        } catch (err) {
-            if (win) win.close();
-            alert('Could not open file: ' + err.message);
-        }
-    }
-
 
     function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
 
@@ -327,7 +276,7 @@
     });
 
     function triggerSignOut() {
-        if(confirm("Are you sure you want to sign out from the AIOSH platform?")) {
+        if(confirm("Are you sure you want to sign out from the AYOSH platform?")) {
             localStorage.removeItem('currentUser');
             window.location.href = 'welcome.html';
         }
@@ -481,21 +430,13 @@
                 `;
             }
 
-            // Create clickable file link
-            let fileCell = '📁 <code style="color: #999;">No file</code>';
-            if (doc.githubPath || doc.fileData) {
-                fileCell = `<a href="#" onclick="openStoredFile('${doc.id}'); return false;" title="Open file" style="color: #00008F; text-decoration: none; cursor: pointer; font-weight: 600;">
-                    📁 <code style="color: #00008F; text-decoration: underline;">${doc.fileName || 'View File'}</code>
-                </a>`;
-            }
-
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${doc.docType}</strong></td>
                 <td>${doc.docName}</td>
                 <td>${doc.quarter}</td>
                 <td>${doc.year}</td>
-                <td>${fileCell}</td>
+                <td>📁 <code>${doc.fileName}</code></td>
                 <td>${doc.dateIssued}</td>
                 <td>${doc.expirationDate}</td>
                 <td>${doc.uploadedDate}</td>
@@ -614,7 +555,7 @@
         const userString = localStorage.getItem('currentUser');
         if (userString && modalId === 'infoModal') {
             const user = JSON.parse(userString);
-            sessionStorage.setItem('aiosh_modal_seen_' + user.email, 'true');
+            sessionStorage.setItem('ayosh_modal_seen_' + user.email, 'true');
         }
     }
 
@@ -633,7 +574,7 @@
             document.getElementById('tableTitle').textContent = `Submitted Compliance Requirements — ${user.branch} Branch`;
             document.getElementById('avatarCircle').textContent = cleanName.charAt(0).toUpperCase();
 
-            const hasSeenModal = sessionStorage.getItem('aiosh_modal_seen_' + user.email);
+            const hasSeenModal = sessionStorage.getItem('ayosh_modal_seen_' + user.email);
             if (hasSeenModal === 'true') {
                 document.getElementById('infoModal').style.display = 'none';
             } else {
