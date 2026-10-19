@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIOSH - Corporate Admin Dashboard</title>
+    <title>AYOSH - Corporate Admin Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #f4f6f9; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
@@ -11,8 +11,8 @@
         /* --- Header Navigation Banner --- */
         .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .nav-left { display: flex; align-items: center; gap: 15px; }
-        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
-        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .ayosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .ayosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
         .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
         
         /* --- Notification Bell & Dropdown Layout --- */
@@ -99,8 +99,6 @@
         .action-icon-btn { background: none; border: none; cursor: pointer; font-size: 12px; padding: 6px 12px; margin: 0 2px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
         .review-btn { color: #00008F; background: #eef2ff; border: 1px solid #d0dfff; }
         .review-btn:hover { background: #e0e7ff; }
-        .view-btn { color: #2b8a3e; background: #ebfbee; border: 1px solid #d3f9d8; }
-        .view-btn:hover { background: #d3f9d8; }
         .no-data-msg { padding: 50px; text-align: center; color: #888888; font-style: italic; font-size: 14px; }
 
         /* --- Global Operational Processing Prompt Modals --- */
@@ -126,9 +124,9 @@
     <!-- --- Header Navigation Area --- -->
     <header class="navbar">
         <div class="nav-left">
-            <div class="aiosh-logo-container">
-                <span class="aiosh-logo-text">AIOSH</span>
-                <span class="aiosh-tagline">Corporate Administration Hub</span>
+            <div class="ayosh-logo-container">
+                <span class="ayosh-logo-text">AYOSH</span>
+                <span class="ayosh-tagline">Corporate Administration Hub</span>
             </div>
         </div>
         <div class="nav-right">
@@ -166,7 +164,7 @@
             <div class="toolbar-row">
 <div class="filter-group">
     <label>Regional Domain Focus</label>
-    <select id="filterRegion" class="form-control" onchange="updateBranchOptions(); processMasterStateEngine()">
+    <select id="filterRegion" class="form-control" onchange="processMasterStateEngine()">
         <option value="all">Show All Regions</option>
         <option value="NCR">NCR Region</option>
         <option value="Luzon">Luzon Region</option>
@@ -176,8 +174,14 @@
                 <div class="filter-group">
                     <label>Branch Domain Focus</label>
                     <select id="filterBranch" class="form-control" onchange="processMasterStateEngine()">
-                        <option value="all">Show All Branches</option>
-                    </select>
+    <option value="all">Show All Branches</option>
+    <option value="Binondo">Binondo Branch Office</option>
+    <option value="Pampanga">Pampanga Branch Office</option>
+    <option value="Zamboanga">Zamboanga Branch Office</option>
+    <option value="Cagayan de Oro">Cagayan de Oro Branch Office</option>
+    <option value="Lipa">Lipa Branch Office</option>
+</select>
+
                 </div>
                 <div class="filter-group">
                     <label>Filing Quarter Focus</label>
@@ -322,13 +326,13 @@
         <th onclick="sortGridByField('status')">Status</th>
         <th>Branch Remarks</th>
         <th>Admin Review Remarks</th>
-        <th style="cursor: default; text-align: center; min-width: 200px;">Review Actions</th>
+        <th style="cursor: default; text-align: center; min-width: 140px;">Review Actions</th>
     </tr>
 </thead>
 
                     <tbody id="adminTableBody">
                         <tr>
-                            <td colspan="14" class="no-data-msg">No submissions currently found in corporate cache.</td>
+                            <td colspan="13" class="no-data-msg">No submissions currently found in corporate cache.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -363,68 +367,9 @@
     </footer>
 </body>
 <script>
-    // --- REGION-TO-BRANCHES MAPPING ---
-    const regionBranchMap = {
-        'NCR': ['Binondo'],
-        'Luzon': ['Pampanga', 'Lipa'],
-        'VisMin': ['Zamboanga', 'Cagayan de Oro']
-    };
-
     let activeFieldSort = "branch";
     let sortDirectionAsc = true;
     let reviewTargetSubmissionId = null;
-    const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
-    // ---- GitHub file storage (files are saved as one JSON file per submission) ----
-    const GITHUB_OWNER  = "JosephGaldo";
-    const GITHUB_REPO   = "private";
-    const GITHUB_BRANCH = "main";
-    const GITHUB_FOLDER = "submissions-files";
-    // Token (read-only: fine-grained token, ONLY this repo, Contents = Read-only)
-    const GITHUB_TOKEN  = "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";
-
-    function githubUrl(path) {
-        return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
-    }
-    function githubHeaders(accept) {
-        return {
-            'Authorization': `Bearer ${GITHUB_TOKEN}`,
-            'Accept': accept || 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-        };
-    }
-
-    // Open a stored file in a new tab. Reads the JSON file from GitHub using the record's githubPath.
-    async function openStoredFile(recordId) {
-        const win = window.open('', '_blank'); // open now so the popup isn't blocked after the awaits
-        try {
-            const res = await fetch(`${MOCKAPI_URL}/${recordId}`);
-            const rec = await res.json();
-
-            let dataUrl = rec.fileData; // older records saved directly in MockAPI
-            if (!dataUrl && rec.githubPath) {
-                const gh = await fetch(`${githubUrl(rec.githubPath)}?ref=${GITHUB_BRANCH}`, {
-                    headers: githubHeaders('application/vnd.github.raw+json'),
-                    cache: 'no-store'
-                });
-                if (!gh.ok) throw new Error(`GitHub error ${gh.status}. Check the token, repo name and file path.`);
-                const payload = await gh.json();
-                dataUrl = payload.fileData;
-            }
-            if (!dataUrl) throw new Error('No file stored for this record.');
-
-            const [meta, b64] = dataUrl.split(',');
-            const mime = (meta.match(/data:(.*?);base64/) || [])[1] || rec.fileMime || 'application/octet-stream';
-            const bytes = atob(b64);
-            const arr = new Uint8Array(bytes.length);
-            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-            const url = URL.createObjectURL(new Blob([arr], { type: mime }));
-            if (win) win.location.href = url; else window.open(url, '_blank');
-        } catch (err) {
-            if (win) win.close();
-            alert('Could not open file: ' + err.message);
-        }
-    }
-
 
     function toggleProfileDropdown(e) { e.stopPropagation(); const drop = document.getElementById('profileDropdown'); drop.style.display = drop.style.display === 'block' ? 'none' : 'block'; }
     function toggleNotificationPanel(e) { 
@@ -433,7 +378,7 @@
         panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
         
         document.getElementById('notifCountBadge').style.display = 'none';
-        localStorage.setItem('aiosh_admin_notif_seen', 'true');
+        localStorage.setItem('ayosh_admin_notif_seen', 'true');
     }
 
     document.addEventListener('click', function() {
@@ -446,31 +391,6 @@
             localStorage.removeItem('currentUser');
             window.location.href = 'welcome.html';
         }
-    }
-
-    // --- UPDATE BRANCH OPTIONS BASED ON SELECTED REGION ---
-    function updateBranchOptions() {
-        const selectedRegion = document.getElementById('filterRegion').value;
-        const branchSelect = document.getElementById('filterBranch');
-        
-        let branchesForRegion = [];
-        if (selectedRegion === 'all') {
-            branchesForRegion = ['Binondo', 'Pampanga', 'Zamboanga', 'Cagayan de Oro', 'Lipa'];
-        } else if (regionBranchMap[selectedRegion]) {
-            branchesForRegion = regionBranchMap[selectedRegion];
-        }
-        
-        // Rebuild branch dropdown
-        branchSelect.innerHTML = '<option value="all">Show All Branches</option>';
-        branchesForRegion.forEach(branch => {
-            const option = document.createElement('option');
-            option.value = branch;
-            option.textContent = branch + ' Branch Office';
-            branchSelect.appendChild(option);
-        });
-        
-        // Reset to 'all' when region changes
-        branchSelect.value = 'all';
     }
 
     function toggleColumnVisibility(checkbox) {
@@ -505,7 +425,7 @@
         const badge = document.getElementById('notifCountBadge');
         const container = document.getElementById('notifPanelContents');
         const pendingItems = submissions.filter(d => d.status === "pending");
-        const alreadySeen = localStorage.getItem('aiosh_admin_notif_seen') === 'true';
+        const alreadySeen = localStorage.getItem('ayosh_admin_notif_seen') === 'true';
 
         if(pendingItems.length > 0) {
             if (!alreadySeen) {
@@ -545,93 +465,102 @@
         const quarterContextString = activeQ === 'all' ? "Full Fiscal Cycle" : activeQ;
         document.getElementById('gaugeSummaryStatement').textContent = yieldRate + "% yield across " + branchContextString + " (" + quarterContextString + ")";
 
-        const barContainer = document.getElementById('barChartContainerWrapper');
-        barContainer.innerHTML = '';
+                 const barContainer = document.getElementById('barChartContainerWrapper');
+    barContainer.innerHTML = '';
+    
+    let trackingBranches = [];
+    if (activeB === 'all') {
+        // Extracts distinct branch values from your active filtered subset rows
+        const allDistinctBranches = [...new Set(filteredRecords.map(r => r.branch))];
         
-        let trackingBranches = [];
-        if (activeB === 'all') {
-            const allDistinctBranches = [...new Set(filteredRecords.map(r => r.branch))];
-            trackingBranches = allDistinctBranches.length > 0 ? allDistinctBranches : ["Binondo", "Pampanga", "Zamboanga", "Cagayan de Oro", "Lipa"];
-        } else {
-            trackingBranches = [activeB];
-        }
-
-        trackingBranches.sort();
-
-        trackingBranches.forEach(b => {
-            const branchFullSet = filteredRecords.filter(r => r.branch === b);
-            const bTotal = branchFullSet.length;
-            const bApp = branchFullSet.filter(r => r.status === 'approved').length;
-            const bPen = branchFullSet.filter(r => r.status === 'pending').length;
-            const bDec = branchFullSet.filter(r => r.status === 'declined').length;
-
-            const appPct = bTotal > 0 ? (bApp / bTotal) * 100 : 0;
-            const penPct = bTotal > 0 ? (bPen / bTotal) * 100 : 0;
-            const decPct = bTotal > 0 ? (bDec / bTotal) * 100 : 0;
-
-            const row = document.createElement('div');
-            row.className = "bar-row";
-            
-            let barsHtml = '';
-            if (bApp > 0) barsHtml += '<div class="bar-segment bg-approved" style="width: ' + appPct + '%" title="Approved">' + bApp + '</div>';
-            if (bPen > 0) barsHtml += '<div class="bar-segment bg-pending" style="width: ' + penPct + '%" title="Pending">' + bPen + '</div>';
-            if (bDec > 0) barsHtml += '<div class="bar-segment bg-declined" style="width: ' + decPct + '%" title="Declined">' + bDec + '</div>';
-            if (bTotal === 0) barsHtml += '<div style="font-size:11px; color:#999; padding-left:10px; line-height:24px;">No files filed</div>';
-
-            row.innerHTML = `
-                <div class="bar-label">${b} Branch</div>
-                <div class="bar-track">
-                    ${barsHtml}
-                </div>
-                <div class="bar-total-count">${bTotal} files</div>
-            `;
-            barContainer.appendChild(row);
-        });
-
-        let yellowRiskTotal = 0;
-        let orangeRiskTotal = 0;
-        let redRiskTotal = 0;
-
-        const pipelineTrackedItems = filteredRecords.filter(r => (r.status === 'approved' || r.status === 'pending') && r.expirationDate);
-        
-        const phTimeCurrent = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
-        const localTodayTimestamp = new Date(phTimeCurrent.getFullYear(), phTimeCurrent.getMonth(), phTimeCurrent.getDate());
-
-        pipelineTrackedItems.forEach(doc => {
-            const dateStringParts = doc.expirationDate.split('-');
-            if (dateStringParts.length !== 3) return;
-
-            const calculatedExpiryDate = new Date(parseInt(dateStringParts[0], 10), parseInt(dateStringParts[1], 10) - 1, parseInt(dateStringParts[2], 10));
-            const deltaMillisecondsDifference = calculatedExpiryDate.getTime() - localTodayTimestamp.getTime();
-            const activeDaysDeltaRemaining = Math.ceil(deltaMillisecondsDifference / (1000 * 60 * 60 * 24));
-
-            if (activeDaysDeltaRemaining >= 0 && activeDaysDeltaRemaining <= 30) {
-                if (activeDaysDeltaRemaining <= 7) {
-                    redRiskTotal++;
-                } else if (activeDaysDeltaRemaining <= 15) {
-                    orangeRiskTotal++;
-                } else {
-                    yellowRiskTotal++;
-                }
-            }
-        });
-
-        const cumulativeActiveRiskSum = yellowRiskTotal + orangeRiskTotal + redRiskTotal;
-        const computedYellowBarPercentage = cumulativeActiveRiskSum > 0 ? (yellowRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
-        const computedOrangeBarPercentage = cumulativeActiveRiskSum > 0 ? (orangeRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
-        const computedRedBarPercentage = cumulativeActiveRiskSum > 0 ? (redRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
-
-        document.getElementById('riskCountYellow').textContent = yellowRiskTotal;
-        document.getElementById('riskBarYellow').style.width = computedYellowBarPercentage + "%";
-
-        document.getElementById('riskCountOrange').textContent = orangeRiskTotal;
-        document.getElementById('riskBarOrange').style.width = computedOrangeBarPercentage + "%";
-
-        document.getElementById('riskCountRed').textContent = redRiskTotal;
-        document.getElementById('riskBarRed').style.width = computedRedBarPercentage + "%";
+        // If no records match yet, defaults tracking bars straight to your new corporate layout map 
+        trackingBranches = allDistinctBranches.length > 0 ? allDistinctBranches : ["Binondo", "Pampanga", "Zamboanga", "Cagayan de Oro", "Lipa"];
+    } else {
+        trackingBranches = [activeB];
     }
 
-    // --- REVIEW MODAL FUNCTIONS ---
+    // Sort your tracking array rows alphabetically for visual presentation neatness
+    trackingBranches.sort();
+
+    trackingBranches.forEach(b => {
+        const branchFullSet = filteredRecords.filter(r => r.branch === b);
+        const bTotal = branchFullSet.length;
+        const bApp = branchFullSet.filter(r => r.status === 'approved').length;
+        const bPen = branchFullSet.filter(r => r.status === 'pending').length;
+        const bDec = branchFullSet.filter(r => r.status === 'declined').length;
+
+        const appPct = bTotal > 0 ? (bApp / bTotal) * 100 : 0;
+        const penPct = bTotal > 0 ? (bPen / bTotal) * 100 : 0;
+        const decPct = bTotal > 0 ? (bDec / bTotal) * 100 : 0;
+
+        const row = document.createElement('div');
+        row.className = "bar-row";
+        
+        let barsHtml = '';
+        if (bApp > 0) barsHtml += '<div class="bar-segment bg-approved" style="width: ' + appPct + '%" title="Approved">' + bApp + '</div>';
+        if (bPen > 0) barsHtml += '<div class="bar-segment bg-pending" style="width: ' + penPct + '%" title="Pending">' + bPen + '</div>';
+        if (bDec > 0) barsHtml += '<div class="bar-segment bg-declined" style="width: ' + decPct + '%" title="Declined">' + bDec + '</div>';
+        if (bTotal === 0) barsHtml += '<div style="font-size:11px; color:#999; padding-left:10px; line-height:24px;">No files filed</div>';
+
+        row.innerHTML = `
+            <div class="bar-label">${b} Branch</div>
+            <div class="bar-track">
+                ${barsHtml}
+            </div>
+            <div class="bar-total-count">${bTotal} files</div>
+        `;
+        barContainer.appendChild(row);
+    });
+
+    
+    // --- Paste this snippet directly inside the end of your calculateAnalyticsDashboard() function loop ---
+    let yellowRiskTotal = 0;
+    let orangeRiskTotal = 0;
+    let redRiskTotal = 0;
+
+    // Isolate active target records context boundaries cleanly
+    const pipelineTrackedItems = filteredRecords.filter(r => (r.status === 'approved' || r.status === 'pending') && r.expirationDate);
+    
+    // Core calendar timezone normalizer baseline checks
+    const phTimeCurrent = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+    const localTodayTimestamp = new Date(phTimeCurrent.getFullYear(), phTimeCurrent.getMonth(), phTimeCurrent.getDate());
+
+    pipelineTrackedItems.forEach(doc => {
+        const dateStringParts = doc.expirationDate.split('-');
+        if (dateStringParts.length !== 3) return;
+
+        const calculatedExpiryDate = new Date(parseInt(dateStringParts[0], 10), parseInt(dateStringParts[1], 10) - 1, parseInt(dateStringParts[2], 10));
+        const deltaMillisecondsDifference = calculatedExpiryDate.getTime() - localTodayTimestamp.getTime();
+        const activeDaysDeltaRemaining = Math.ceil(deltaMillisecondsDifference / (1000 * 60 * 60 * 24));
+
+        if (activeDaysDeltaRemaining >= 0 && activeDaysDeltaRemaining <= 30) {
+            if (activeDaysDeltaRemaining <= 7) {
+                redRiskTotal++;
+            } else if (activeDaysDeltaRemaining <= 15) {
+                orangeRiskTotal++;
+            } else {
+                yellowRiskTotal++;
+            }
+        }
+    });
+
+    // Compute layout percentage scaling parameters dynamically to maintain fluid chart bars sizing behavior
+    const cumulativeActiveRiskSum = yellowRiskTotal + orangeRiskTotal + redRiskTotal;
+    const computedYellowBarPercentage = cumulativeActiveRiskSum > 0 ? (yellowRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
+    const computedOrangeBarPercentage = cumulativeActiveRiskSum > 0 ? (orangeRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
+    const computedRedBarPercentage = cumulativeActiveRiskSum > 0 ? (redRiskTotal / cumulativeActiveRiskSum) * 100 : 0;
+
+    // Inject metrics text properties and dimensions dynamically to the layout nodes
+    document.getElementById('riskCountYellow').textContent = yellowRiskTotal;
+    document.getElementById('riskBarYellow').style.width = computedYellowBarPercentage + "%";
+
+    document.getElementById('riskCountOrange').textContent = orangeRiskTotal;
+    document.getElementById('riskBarOrange').style.width = computedOrangeBarPercentage + "%";
+
+    document.getElementById('riskCountRed').textContent = redRiskTotal;
+    document.getElementById('riskBarRed').style.width = computedRedBarPercentage + "%";
+}
+    // --- Block 2 of Part 6 (Paste this directly below Block 1 to complete the file) ---
     function openReviewModal(submissionId, docName, branch) {
         reviewTargetSubmissionId = submissionId;
         document.getElementById('modalTargetDocLabel').textContent = docName;
@@ -643,6 +572,7 @@
     function closeReviewModal() { document.getElementById('reviewModal').style.display = 'none'; }
 
     async function executeReviewAction(finalStatusStatus) {
+        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
         const remarksText = document.getElementById('modalAdminRemarks').value.trim();
         if(!remarksText) { alert("Please provide mandatory notes."); return; }
 
@@ -659,12 +589,14 @@
         }
 
         closeReviewModal();
-        localStorage.removeItem('aiosh_admin_notif_seen');
+        localStorage.removeItem('ayosh_admin_notif_seen');
         processMasterStateEngine();
     }
 
-    // --- MASTER STATE ENGINE ---
+        // --- UPDATED MASTER ENGINE FOR LOCALSTORAGE MULTI-LAYER RE-FILTERING ---
     async function processMasterStateEngine() {
+        const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+        
         const response = await fetch(MOCKAPI_URL);
         const allSubmissions = await response.json();
         
@@ -693,13 +625,14 @@
         renderAdminLedgerRows(filtered);
     }
 
-    // --- TABLE RENDERING ---
+
+          // --- UPDATED LAYOUT DATA ROW PAINTER WITH GEOGRAPHIC REGION COLUMN MATRIX ---
     function renderAdminLedgerRows(records) {
         const tbody = document.getElementById('adminTableBody');
         tbody.innerHTML = '';
 
         if(records.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="14" class="no-data-msg">No multi-branch submissions match active criteria parameters.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="14" class="no-data-msg">No multi-branch submissions match active criteria parameters.</td></tr>`; // CHANGED COLSPAN TO 14
             return;
         }
 
@@ -715,15 +648,8 @@
                 actionCellContent = `<span style="color: #666666; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">🔒 Locked</span>`;
             }
 
-            // Create clickable file link
-            let fileCell = '📁 <code style="color: #999;">No file</code>';
-            if (doc.githubPath || doc.fileData) {
-                fileCell = `<a href="#" onclick="openStoredFile('${doc.id}'); return false;" title="Open file" style="color: #00008F; text-decoration: none; cursor: pointer; font-weight: 600;">
-                    📁 <code style="color: #00008F; text-decoration: underline;">${doc.fileName || 'View File'}</code>
-                </a>`;
-            }
-
             const tr = document.createElement('tr');
+            // ADDED: Added <td>\${doc.region || '-'}</td> cell line right before the branch parameter token
             tr.innerHTML = `
                 <td><span style="color: #666666; font-weight: 700; text-transform: uppercase; font-size: 11px;">${doc.region || '-'}</span></td>
                 <td><strong>${doc.branch}</strong></td>
@@ -731,7 +657,7 @@
                 <td>${doc.docName}</td>
                 <td>${doc.quarter}</td>
                 <td>${doc.year}</td>
-                <td>${fileCell}</td>
+                <td>📁 <code>${doc.fileName}</code></td>
                 <td>${doc.dateIssued}</td>
                 <td>${doc.expirationDate}</td>
                 <td>${doc.uploadedDate}</td>
@@ -749,9 +675,9 @@
         checkboxes.forEach(cb => toggleColumnVisibility(cb));
     }
 
+
     document.addEventListener("DOMContentLoaded", function() {
         setupAdminYearDropdown();
-        updateBranchOptions();
         processMasterStateEngine();
     });
 </script>
