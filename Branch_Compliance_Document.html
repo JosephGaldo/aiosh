@@ -304,8 +304,6 @@
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
         let targetFileName = "";
-        let fileBase64Data = null;
-        let fileMimeType = null;
         
         const getRes = await fetch(MOCKAPI_URL);
         let allSubmissions = await getRes.json();
@@ -320,37 +318,16 @@
                 return;
             }
             fileErrorMsg.style.display = 'none';
-            
-            // Convert file to Base64
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                fileBase64Data = e.target.result; // This includes the "data:image/png;base64," prefix
-                fileMimeType = uploadedFile.type;
-                
-                const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
-                const inputYear = document.getElementById('year').value;
-                targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
-                
-                // Continue with form submission after file is converted
-                await continueFormSubmission(targetFileName, fileBase64Data, fileMimeType);
-            };
-            reader.readAsDataURL(uploadedFile);
-            return; // Exit and wait for reader to finish
+            const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
+            const inputYear = document.getElementById('year').value;
+            targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
         } else if (editTargetId) {
             const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
             targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
-            fileBase64Data = previousRecord ? previousRecord.fileBase64 : null;
-            fileMimeType = previousRecord ? previousRecord.fileMimeType : null;
-            await continueFormSubmission(targetFileName, fileBase64Data, fileMimeType);
         } else {
             fileErrorMsg.style.display = 'block';
             return;
         }
-    }
-
-    async function continueFormSubmission(targetFileName, fileBase64Data, fileMimeType) {
-        const getRes = await fetch(MOCKAPI_URL);
-        let allSubmissions = await getRes.json();
 
         const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
         const formatUploadedDate = phTime.toISOString().split('T')[0];
@@ -375,9 +352,7 @@
                     remarks: document.getElementById('remarks').value,
                     fileName: targetFileName,
                     uploadedDate: formatUploadedDate,
-                    status: "pending",
-                    fileBase64: fileBase64Data || recordToEdit.fileBase64,
-                    fileMimeType: fileMimeType || recordToEdit.fileMimeType
+                    status: "pending"
                 };
             }
         } else {
@@ -395,9 +370,7 @@
                 fileName: targetFileName,
                 uploadedDate: formatUploadedDate,
                 status: "pending",
-                adminRemarks: "",
-                fileBase64: fileBase64Data,
-                fileMimeType: fileMimeType
+                adminRemarks: ""
             };
         }
 
