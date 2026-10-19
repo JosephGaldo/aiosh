@@ -135,7 +135,7 @@
                 <h2 id="welcomeGreeting">Welcome, User</h2>
                 <p id="branchSubtitle">AXA Philippines Compliance Management Dashboard</p>
             </div>
-            <a href="Branch_Compliance_Document_Updated.html" class="submit-btn">📄 Submit Branch Compliance Document</a>
+            <a href="Branch_Compliance_Document.html" class="submit-btn">📄 Submit Branch Compliance Document</a>
         </section>
 
         <!-- --- POSITIONED IN WELCOME CONTAINER: Expiration Warning Dashboard Alerts Container --- -->
@@ -374,7 +374,7 @@
 
     function triggerDirectRenewal(id) {
         localStorage.setItem('editTargetId', id);
-        window.location.href = 'Branch_Compliance_Document_Updated.html';
+        window.location.href = 'Branch_Compliance_Document.html';
     }
 
     async function applyFiltersAndSort() {
@@ -545,7 +545,7 @@
         actionBtn.className = "btn btn-primary";
         actionBtn.onclick = function() {
             localStorage.setItem('editTargetId', globalActiveIndex);
-            window.location.href = 'Branch_Compliance_Document_Updated.html';
+            window.location.href = 'Branch_Compliance_Document.html';
         };
         openModal('confirmModal');
     }
