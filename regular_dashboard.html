@@ -430,13 +430,21 @@
                 `;
             }
 
+            // Create clickable file link to Google Drive
+            let fileCell = '📁 <code style="color: #999;">No file</code>';
+            if (doc.driveFileUrl) {
+                fileCell = `<a href="${doc.driveFileUrl}" target="_blank" title="Open in Google Drive" style="color: #00008F; text-decoration: none; cursor: pointer; font-weight: 600;">
+                    📁 <code style="color: #00008F; text-decoration: underline;">${doc.fileName || 'View File'}</code>
+                </a>`;
+            }
+
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><strong>${doc.docType}</strong></td>
                 <td>${doc.docName}</td>
                 <td>${doc.quarter}</td>
                 <td>${doc.year}</td>
-                <td>📁 <code>${doc.fileName}</code></td>
+                <td>${fileCell}</td>
                 <td>${doc.dateIssued}</td>
                 <td>${doc.expirationDate}</td>
                 <td>${doc.uploadedDate}</td>
