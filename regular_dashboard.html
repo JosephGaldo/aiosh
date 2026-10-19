@@ -263,12 +263,12 @@
     let globalActiveIndex = null;
     const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
     // ---- GitHub file storage (files are saved as one JSON file per submission) ----
-    const GITHUB_OWNER  = "YOUR_GITHUB_USERNAME";
-    const GITHUB_REPO   = "YOUR_REPOSITORY_NAME";
+    const GITHUB_OWNER  = "JosephGaldo";
+    const GITHUB_REPO   = "ayosh";
     const GITHUB_BRANCH = "main";
     const GITHUB_FOLDER = "submissions-files";
     // Token (read-only: fine-grained token, ONLY this repo, Contents = Read-only)
-    const GITHUB_TOKEN  = "YOUR_FINE_GRAINED_TOKEN";
+    const GITHUB_TOKEN  = "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";
 
     function githubUrl(path) {
         return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
