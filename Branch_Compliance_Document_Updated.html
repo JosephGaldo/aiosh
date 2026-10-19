@@ -198,7 +198,7 @@
                         <div id="fileErrorMsg" class="file-error">Invalid file format. Please upload an authorized image asset or PDF item.</div>
                         <div id="fileCurrentValue" style="font-size:12px; color:#555; margin-top:2px; font-weight:600; display:none;"></div>
                         <div id="uploadProgress" class="upload-progress">
-                            <div style="font-size: 12px; font-weight: 600; margin-bottom: 5px;">Saving file to GitHub...</div>
+                            <div style="font-size: 12px; font-weight: 600; margin-bottom: 5px;">Uploading to Google Drive...</div>
                             <div class="progress-bar">
                                 <div class="progress-fill" id="uploadProgressBar"></div>
                             </div>
@@ -237,7 +237,7 @@
                             <th>Quarter</th>
                             <th>Year</th>
                             <th>Upload Date</th>
-                            <th>File</th>
+                            <th>Drive Link</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
@@ -264,126 +264,8 @@
     </footer>
 </body>
 <script>
-    // Max file size in KB (the file is stored in GitHub as a JSON file, base64-encoded)
-    const MAX_FILE_KB = 1500;
-    const IMAGE_MAX_DIMENSION = 1600; // images are resized/compressed to fit
-
-    // Compress images (JPEG/PNG) with a canvas; PDFs are returned unchanged.
-    function readFileAsDataURL(file) {
-        return new Promise((resolve, reject) => {
-            const r = new FileReader();
-            r.onload = () => resolve(r.result);
-            r.onerror = () => reject(new Error('Could not read the file.'));
-            r.readAsDataURL(file);
-        });
-    }
-
-    async function prepareFileData(file) {
-        const original = await readFileAsDataURL(file);
-        if (!file.type.startsWith('image/')) return { dataUrl: original, mime: file.type };
-
-        const img = await new Promise((resolve, reject) => {
-            const i = new Image();
-            i.onload = () => resolve(i);
-            i.onerror = () => reject(new Error('Could not process the image.'));
-            i.src = original;
-        });
-        const scale = Math.min(1, IMAGE_MAX_DIMENSION / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * scale);
-        canvas.height = Math.round(img.height * scale);
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        let quality = 0.8, out = canvas.toDataURL('image/jpeg', quality);
-        while (out.length * 0.75 > MAX_FILE_KB * 1024 && quality > 0.3) {
-            quality -= 0.1;
-            out = canvas.toDataURL('image/jpeg', quality);
-        }
-        return { dataUrl: out, mime: 'image/jpeg' };
-    }
-
-    // ---- GitHub file storage (files are saved as one JSON file per submission) ----
-    const GITHUB_OWNER  = "JosephGaldo";
-    const GITHUB_REPO   = "private";
-    const GITHUB_BRANCH = "main";
-    const GITHUB_FOLDER = "submissions-files";
-    // Token (write access: fine-grained token, ONLY this repo, Contents = Read and write)
-    const GITHUB_TOKEN  = "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";
-
-    function githubUrl(path) {
-        return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
-    }
-    function githubHeaders(accept) {
-        return {
-            'Authorization': `Bearer ${GITHUB_TOKEN}`,
-            'Accept': accept || 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28'
-        };
-    }
-
-    // Open a stored file in a new tab. Reads the JSON file from GitHub using the record's githubPath.
-    async function openStoredFile(recordId) {
-        const win = window.open('', '_blank'); // open now so the popup isn't blocked after the awaits
-        try {
-            const res = await fetch(`${MOCKAPI_URL}/${recordId}`);
-            const rec = await res.json();
-
-            let dataUrl = rec.fileData; // older records saved directly in MockAPI
-            if (!dataUrl && rec.githubPath) {
-                const gh = await fetch(`${githubUrl(rec.githubPath)}?ref=${GITHUB_BRANCH}`, {
-                    headers: githubHeaders('application/vnd.github.raw+json'),
-                    cache: 'no-store'
-                });
-                if (!gh.ok) throw new Error(`GitHub error ${gh.status}. Check the token, repo name and file path.`);
-                const payload = await gh.json();
-                dataUrl = payload.fileData;
-            }
-            if (!dataUrl) throw new Error('No file stored for this record.');
-
-            const [meta, b64] = dataUrl.split(',');
-            const mime = (meta.match(/data:(.*?);base64/) || [])[1] || rec.fileMime || 'application/octet-stream';
-            const bytes = atob(b64);
-            const arr = new Uint8Array(bytes.length);
-            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-            const url = URL.createObjectURL(new Blob([arr], { type: mime }));
-            if (win) win.location.href = url; else window.open(url, '_blank');
-        } catch (err) {
-            if (win) win.close();
-            alert('Could not open file: ' + err.message);
-        }
-    }
-
-    // Save/overwrite one JSON file in the GitHub repo
-    async function githubSaveJson(path, obj) {
-        const json = JSON.stringify(obj);
-        const content = btoa(unescape(encodeURIComponent(json))); // UTF-8 safe base64
-
-        // If the file already exists (editing a submission) GitHub needs its current sha
-        let sha;
-        const head = await fetch(`${githubUrl(path)}?ref=${GITHUB_BRANCH}`, { headers: githubHeaders(), cache: 'no-store' });
-        if (head.ok) sha = (await head.json()).sha;
-        else if (head.status !== 404) throw new Error(`GitHub error ${head.status}. Check the token, repo name and branch.`);
-
-        const put = await fetch(githubUrl(path), {
-            method: 'PUT',
-            headers: { ...githubHeaders(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                message: `Upload ${path}`,
-                content: content,
-                branch: GITHUB_BRANCH,
-                ...(sha ? { sha } : {})
-            })
-        });
-        if (!put.ok) {
-            let detail = '';
-            try { detail = (await put.json()).message; } catch (e) {}
-            throw new Error(`GitHub upload failed (${put.status}). ${detail}`);
-        }
-        return path;
-    }
+    // ⭐ REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT DEPLOYMENT URL
+    const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/d/YOUR_DEPLOYMENT_ID/usercopy?v=1";
     
     let activeUser = null;
     let editTargetId = null;
@@ -436,6 +318,8 @@
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
         const uploadProgress = document.getElementById('uploadProgress');
+        let driveFileUrl = null;
+        let driveFileId = null;
 
         try {
             // Validate file
@@ -455,39 +339,55 @@
                 uploadProgress.style.display = 'block';
                 document.getElementById('uploadProgressBar').style.width = '25%';
 
-                document.getElementById('uploadProgressBar').style.width = '50%';
-                try {
-                    const prepared = await prepareFileData(uploadedFile);
-                    const sizeKB = Math.round(prepared.dataUrl.length * 0.75 / 1024);
-                    if (sizeKB > MAX_FILE_KB) {
-                        throw new Error(`File is too large (${sizeKB} KB). Maximum allowed is ${MAX_FILE_KB} KB. Please compress the file and try again.`);
+                // Convert file to Base64
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const base64Data = e.target.result;
+                        const mimeType = uploadedFile.type;
+                        const submissionId = "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+                        document.getElementById('uploadProgressBar').style.width = '50%';
+
+                        // Upload to Google Drive via Apps Script
+                        console.log('📤 Uploading file to Google Drive...');
+                        const uploadRes = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            body: new URLSearchParams({
+                                fileData: base64Data,
+                                fileName: uploadedFile.name,
+                                mimeType: mimeType,
+                                submissionId: submissionId
+                            })
+                        });
+
+                        const uploadResult = await uploadRes.json();
+                        console.log('✅ Google Drive Response:', uploadResult);
+
+                        if (!uploadResult.success) {
+                            throw new Error(uploadResult.error || 'Failed to upload to Google Drive');
+                        }
+
+                        driveFileUrl = uploadResult.fileUrl;
+                        driveFileId = uploadResult.fileId;
+
+                        document.getElementById('uploadProgressBar').style.width = '75%';
+
+                        // Continue with form submission
+                        await continueFormSubmission(submissionId, driveFileId, driveFileUrl);
+
+                        document.getElementById('uploadProgressBar').style.width = '100%';
+                        uploadProgress.style.display = 'none';
+
+                    } catch (error) {
+                        console.error('❌ Upload error:', error);
+                        document.getElementById('alertModalBody').innerHTML = `<strong>❌ Upload Error:</strong><br>${error.message}`;
+                        document.getElementById('alertModal').style.display = 'flex';
+                        uploadProgress.style.display = 'none';
                     }
-                    // When editing, reuse the same ID so the GitHub file is overwritten
-                    const submissionId = editTargetId || ("SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase());
-                    document.getElementById('uploadProgressBar').style.width = '65%';
-
-                    // Save the file (base64) as a JSON file in GitHub
-                    const githubPath = `${GITHUB_FOLDER}/${submissionId}.json`;
-                    await githubSaveJson(githubPath, {
-                        submissionId: submissionId,
-                        fileName: uploadedFile.name,
-                        mimeType: prepared.mime,
-                        uploadedAt: new Date().toISOString(),
-                        fileData: prepared.dataUrl
-                    });
-                    document.getElementById('uploadProgressBar').style.width = '85%';
-
-                    await continueFormSubmission(submissionId, githubPath, prepared.mime);
-
-                    document.getElementById('uploadProgressBar').style.width = '100%';
-                    uploadProgress.style.display = 'none';
-                } catch (error) {
-                    console.error('❌ Upload error:', error);
-                    document.getElementById('alertModalBody').innerHTML = `<strong>❌ Upload Error:</strong><br>${error.message}`;
-                    document.getElementById('alertModal').style.display = 'flex';
-                    uploadProgress.style.display = 'none';
-                }
-
+                };
+                reader.readAsDataURL(uploadedFile);
+                
             } else if (editTargetId) {
                 // Editing - keep existing file reference
                 const getRes = await fetch(MOCKAPI_URL);
@@ -495,7 +395,9 @@
                 const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
                 
                 if (previousRecord) {
-                    await continueFormSubmission(editTargetId, previousRecord.githubPath, previousRecord.fileMime);
+                    driveFileId = previousRecord.driveFileId;
+                    driveFileUrl = previousRecord.driveFileUrl;
+                    await continueFormSubmission(editTargetId, driveFileId, driveFileUrl);
                 }
             } else {
                 fileErrorMsg.style.display = 'block';
@@ -507,7 +409,7 @@
         }
     }
 
-    async function continueFormSubmission(submissionId, githubPath, fileMime) {
+    async function continueFormSubmission(submissionId, driveFileId, driveFileUrl) {
         try {
             const getRes = await fetch(MOCKAPI_URL);
             const allSubmissions = await getRes.json();
@@ -535,8 +437,8 @@
                         remarks: document.getElementById('remarks').value,
                         uploadedDate: formatUploadedDate,
                         status: "pending",
-                        githubPath: githubPath || recordToEdit.githubPath,
-                        fileMime: fileMime || recordToEdit.fileMime
+                        driveFileId: driveFileId || recordToEdit.driveFileId,
+                        driveFileUrl: driveFileUrl || recordToEdit.driveFileUrl
                     };
                 }
             } else {
@@ -555,8 +457,8 @@
                     uploadedDate: formatUploadedDate,
                     status: "pending",
                     adminRemarks: "",
-                    githubPath: githubPath,
-                    fileMime: fileMime
+                    driveFileId: driveFileId,
+                    driveFileUrl: driveFileUrl
                 };
             }
 
@@ -576,7 +478,7 @@
             // Refresh history
             await buildProgressAndHistoryViews();
 
-            document.getElementById('alertModalBody').innerHTML = `<strong>✅ SUCCESS:</strong> Document submitted and saved successfully!`;
+            document.getElementById('alertModalBody').innerHTML = `<strong>✅ SUCCESS:</strong> Document submitted and saved to Google Drive!`;
             document.getElementById('alertModal').style.display = 'flex';
 
         } catch (error) {
@@ -651,7 +553,7 @@
                 branchRecords.sort((a, b) => new Date(b.uploadedDate) - new Date(a.uploadedDate));
 
                 branchRecords.forEach(rec => {
-                    const driveLink = (rec.githubPath || rec.fileData) ? `<a href="#" onclick="openStoredFile('${rec.id}'); return false;" style="color:#00008F; text-decoration:underline;">View File</a>` : 'N/A';
+                    const driveLink = rec.driveFileUrl ? `<a href="${rec.driveFileUrl}" target="_blank" style="color:#00008F; text-decoration:underline;">View in Drive</a>` : 'N/A';
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td><strong>${rec.docType || 'N/A'}</strong></td>
