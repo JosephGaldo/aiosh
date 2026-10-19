@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIOSH - Submit Branch Compliance Document</title>
+    <title>AYOSH - Submit Branch Compliance Document</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #f8f9fa; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
@@ -11,8 +11,8 @@
         /* --- Header Navigation Area --- */
         .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .nav-left { display: flex; align-items: center; gap: 15px; }
-        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
-        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .ayosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .ayosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
         .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
         
         .avatar { width: 35px; height: 35px; background-color: #00008F; color: #ffffff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 14px; cursor: pointer; }
@@ -53,6 +53,7 @@
         .btn { padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 4px; cursor: pointer; border: none; }
         .btn-primary { background-color: #00008F; color: white; }
         .btn-primary:hover { background-color: #000066; }
+        .btn-primary:disabled { background-color: #ccc; cursor: not-allowed; }
         .btn-secondary { background-color: #e0e0e0; color: #333333; text-decoration: none; display: inline-block; text-align: center; }
         .btn-secondary:hover { background-color: #d5d5d5; }
 
@@ -89,6 +90,10 @@
         .modal-body { padding: 30px; font-weight:600; text-align:center; font-size: 14px; line-height: 1.5; }
         .modal-footer { background-color: #f8f9fa; padding: 15px 30px; display: flex; justify-content: center; gap: 12px; border-top: 1px solid #eeeeee; }
         footer { background-color: #ffffff; border-top: 1px solid #e0e0e0; padding: 20px 30px; text-align: center; font-size: 12px; color: #777777; margin-top: auto; }
+
+        .upload-progress { display: none; margin-top: 10px; }
+        .progress-bar { width: 100%; height: 20px; background: #e9ecef; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #00008F; width: 0%; transition: width 0.3s ease; }
     </style>
 </head>
 <body>
@@ -96,9 +101,9 @@
     <!-- --- Header Navigation Area --- -->
     <header class="navbar">
         <div class="nav-left">
-            <div class="aiosh-logo-container">
-                <span class="aiosh-logo-text">AIOSH</span>
-                <span class="aiosh-tagline">Compliance Platform</span>
+            <div class="ayosh-logo-container">
+                <span class="ayosh-logo-text">AYOSH</span>
+                <span class="ayosh-tagline">Compliance Platform</span>
             </div>
         </div>
         <div class="nav-right">
@@ -122,7 +127,6 @@
         <section class="matrix-section">
             <div class="matrix-header-row">
                 <div class="matrix-title">Filing Status Tracker Grid</div>
-                <!-- Added interactive dynamic matrix calendar selector menu options -->
                 <div>
                     <label style="font-size:12px; font-weight:700; color:#444; text-transform:uppercase; margin-right:8px;">View Year Matrix:</label>
                     <select id="matrixYearSelector" class="form-control" style="display:inline-block; width:120px; padding:6px 10px;" onchange="buildProgressAndHistoryViews()"></select>
@@ -193,6 +197,12 @@
                         <input type="file" id="fileUpload" class="form-control" accept=".jpeg,.png,.jpg,.pdf" onchange="autoPopulateDocName()">
                         <div id="fileErrorMsg" class="file-error">Invalid file format. Please upload an authorized image asset or PDF item.</div>
                         <div id="fileCurrentValue" style="font-size:12px; color:#555; margin-top:2px; font-weight:600; display:none;"></div>
+                        <div id="uploadProgress" class="upload-progress">
+                            <div style="font-size: 12px; font-weight: 600; margin-bottom: 5px;">Uploading to Google Drive...</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="uploadProgressBar"></div>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group full-width">
@@ -227,11 +237,12 @@
                             <th>Quarter</th>
                             <th>Year</th>
                             <th>Upload Date</th>
+                            <th>Drive Link</th>
                         </tr>
                     </thead>
                     <tbody id="historyTableBody">
                         <tr>
-                            <td colspan="5" class="no-data">No history items logged for this branch session.</td>
+                            <td colspan="6" class="no-data">Loading history...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -253,6 +264,9 @@
     </footer>
 </body>
 <script>
+    // ⭐ REPLACE THIS WITH YOUR GOOGLE APPS SCRIPT DEPLOYMENT URL
+    const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/d/YOUR_DEPLOYMENT_ID/usercopy?v=1";
+    
     let activeUser = null;
     let editTargetId = null;
     const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
@@ -280,7 +294,7 @@
     });
 
     function triggerSignOut() {
-        if(confirm("Are you sure you want to sign out from the AIOSH platform?")) {
+        if(confirm("Are you sure you want to sign out from the AYOSH platform?")) {
             localStorage.removeItem('currentUser');
             window.location.href = 'welcome.html';
         }
@@ -303,69 +317,135 @@
         
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
-        let targetFileName = "";
-        let fileBase64Data = null;
-        let fileMimeType = null;
-        
-        const getRes = await fetch(MOCKAPI_URL);
-        let allSubmissions = await getRes.json();
-        
-        if (fileInput.files.length > 0) {
-            const uploadedFile = fileInput.files[0];
-            const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
-            const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
-            
-            if (!validExtensions.includes(fileExtension)) {
+        const uploadProgress = document.getElementById('uploadProgress');
+        let driveFileUrl = null;
+        let driveFileId = null;
+
+        try {
+            // Validate file
+            if (fileInput.files.length > 0) {
+                const uploadedFile = fileInput.files[0];
+                const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
+                const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
+                
+                if (!validExtensions.includes(fileExtension)) {
+                    fileErrorMsg.style.display = 'block';
+                    return;
+                }
+
+                fileErrorMsg.style.display = 'none';
+
+                // Show upload progress
+                uploadProgress.style.display = 'block';
+                document.getElementById('uploadProgressBar').style.width = '25%';
+
+                // Convert file to Base64
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const base64Data = e.target.result;
+                        const mimeType = uploadedFile.type;
+                        const submissionId = "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+                        document.getElementById('uploadProgressBar').style.width = '50%';
+
+                        // Upload to Google Drive via Apps Script
+                        console.log('📤 Uploading file to Google Drive...');
+                        const uploadRes = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                            method: 'POST',
+                            body: new URLSearchParams({
+                                fileData: base64Data,
+                                fileName: uploadedFile.name,
+                                mimeType: mimeType,
+                                submissionId: submissionId
+                            })
+                        });
+
+                        const uploadResult = await uploadRes.json();
+                        console.log('✅ Google Drive Response:', uploadResult);
+
+                        if (!uploadResult.success) {
+                            throw new Error(uploadResult.error || 'Failed to upload to Google Drive');
+                        }
+
+                        driveFileUrl = uploadResult.fileUrl;
+                        driveFileId = uploadResult.fileId;
+
+                        document.getElementById('uploadProgressBar').style.width = '75%';
+
+                        // Continue with form submission
+                        await continueFormSubmission(submissionId, driveFileId, driveFileUrl);
+
+                        document.getElementById('uploadProgressBar').style.width = '100%';
+                        uploadProgress.style.display = 'none';
+
+                    } catch (error) {
+                        console.error('❌ Upload error:', error);
+                        document.getElementById('alertModalBody').innerHTML = `<strong>❌ Upload Error:</strong><br>${error.message}`;
+                        document.getElementById('alertModal').style.display = 'flex';
+                        uploadProgress.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(uploadedFile);
+                
+            } else if (editTargetId) {
+                // Editing - keep existing file reference
+                const getRes = await fetch(MOCKAPI_URL);
+                const allSubmissions = await getRes.json();
+                const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
+                
+                if (previousRecord) {
+                    driveFileId = previousRecord.driveFileId;
+                    driveFileUrl = previousRecord.driveFileUrl;
+                    await continueFormSubmission(editTargetId, driveFileId, driveFileUrl);
+                }
+            } else {
                 fileErrorMsg.style.display = 'block';
-                return;
             }
-            fileErrorMsg.style.display = 'none';
-            
-            // Convert file to Base64
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                fileBase64Data = e.target.result; // This includes the "data:image/png;base64," prefix
-                fileMimeType = uploadedFile.type;
-                
-                const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
-                const inputYear = document.getElementById('year').value;
-                targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
-                
-                // Continue with form submission after file is converted
-                await continueFormSubmission(targetFileName, fileBase64Data, fileMimeType);
-            };
-            reader.readAsDataURL(uploadedFile);
-            return; // Exit and wait for reader to finish
-        } else if (editTargetId) {
-            const previousRecord = allSubmissions.find(d => d.submissionId === editTargetId);
-            targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
-            fileBase64Data = previousRecord ? previousRecord.fileBase64 : null;
-            fileMimeType = previousRecord ? previousRecord.fileMimeType : null;
-            await continueFormSubmission(targetFileName, fileBase64Data, fileMimeType);
-        } else {
-            fileErrorMsg.style.display = 'block';
-            return;
+        } catch (error) {
+            console.error('❌ Form submission error:', error);
+            document.getElementById('alertModalBody').innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+            document.getElementById('alertModal').style.display = 'flex';
         }
     }
 
-    async function continueFormSubmission(targetFileName, fileBase64Data, fileMimeType) {
-        const getRes = await fetch(MOCKAPI_URL);
-        let allSubmissions = await getRes.json();
+    async function continueFormSubmission(submissionId, driveFileId, driveFileUrl) {
+        try {
+            const getRes = await fetch(MOCKAPI_URL);
+            const allSubmissions = await getRes.json();
 
-        const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
-        const formatUploadedDate = phTime.toISOString().split('T')[0];
+            const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+            const formatUploadedDate = phTime.toISOString().split('T')[0];
 
-        let payloadData = {};
-        let requestUrl = MOCKAPI_URL;
-        let httpMethod = "POST";
+            let payloadData = {};
+            let requestUrl = MOCKAPI_URL;
+            let httpMethod = "POST";
 
-        if (editTargetId) {
-            const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
-            if (recordToEdit) {
-                requestUrl = `${MOCKAPI_URL}/${recordToEdit.id}`;
-                httpMethod = "PUT";
+            if (editTargetId) {
+                const recordToEdit = allSubmissions.find(item => item.submissionId === editTargetId);
+                if (recordToEdit) {
+                    requestUrl = `${MOCKAPI_URL}/${recordToEdit.id}`;
+                    httpMethod = "PUT";
+                    payloadData = {
+                        ...recordToEdit,
+                        docType: document.getElementById('docType').value,
+                        docName: document.getElementById('docName').value,
+                        quarter: document.getElementById('quarter').value,
+                        year: document.getElementById('year').value,
+                        dateIssued: document.getElementById('dateIssued').value,
+                        expirationDate: document.getElementById('expirationDate').value,
+                        remarks: document.getElementById('remarks').value,
+                        uploadedDate: formatUploadedDate,
+                        status: "pending",
+                        driveFileId: driveFileId || recordToEdit.driveFileId,
+                        driveFileUrl: driveFileUrl || recordToEdit.driveFileUrl
+                    };
+                }
+            } else {
                 payloadData = {
-                    ...recordToEdit,
+                    submissionId: submissionId,
+                    branch: activeUser.branch,
+                    region: activeUser.region,
                     docType: document.getElementById('docType').value,
                     docName: document.getElementById('docName').value,
                     quarter: document.getElementById('quarter').value,
@@ -373,74 +453,55 @@
                     dateIssued: document.getElementById('dateIssued').value,
                     expirationDate: document.getElementById('expirationDate').value,
                     remarks: document.getElementById('remarks').value,
-                    fileName: targetFileName,
+                    fileName: document.getElementById('fileUpload').files[0]?.name || 'document',
                     uploadedDate: formatUploadedDate,
                     status: "pending",
-                    fileBase64: fileBase64Data || recordToEdit.fileBase64,
-                    fileMimeType: fileMimeType || recordToEdit.fileMimeType
+                    adminRemarks: "",
+                    driveFileId: driveFileId,
+                    driveFileUrl: driveFileUrl
                 };
             }
-        } else {
-            payloadData = {
-                submissionId: "SUB_" + Math.random().toString(36).substr(2, 9).toUpperCase(),
-                branch: activeUser.branch,
-                region: activeUser.region,
-                docType: document.getElementById('docType').value,
-                docName: document.getElementById('docName').value,
-                quarter: document.getElementById('quarter').value,
-                year: document.getElementById('year').value,
-                dateIssued: document.getElementById('dateIssued').value,
-                expirationDate: document.getElementById('expirationDate').value,
-                remarks: document.getElementById('remarks').value,
-                fileName: targetFileName,
-                uploadedDate: formatUploadedDate,
-                status: "pending",
-                adminRemarks: "",
-                fileBase64: fileBase64Data,
-                fileMimeType: fileMimeType
-            };
+
+            console.log('📤 Submitting to MockAPI...');
+            const submitRes = await fetch(requestUrl, {
+                method: httpMethod,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadData)
+            });
+
+            if (!submitRes.ok) {
+                throw new Error(`MockAPI Error: ${submitRes.status}`);
+            }
+
+            console.log('✅ Successfully saved to MockAPI');
+            
+            // Refresh history
+            await buildProgressAndHistoryViews();
+
+            document.getElementById('alertModalBody').innerHTML = `<strong>✅ SUCCESS:</strong> Document submitted and saved to Google Drive!`;
+            document.getElementById('alertModal').style.display = 'flex';
+
+        } catch (error) {
+            console.error('❌ Submission error:', error);
+            document.getElementById('alertModalBody').innerHTML = `<strong>❌ ERROR:</strong> ${error.message}`;
+            document.getElementById('alertModal').style.display = 'flex';
         }
-
-        await fetch(requestUrl, {
-            method: httpMethod,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payloadData)
-        });
-
-        // *** FIXED: Refresh data from MockAPI and update display ***
-        await buildProgressAndHistoryViews();
-
-        document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong>`;
-        document.getElementById('alertModal').style.display = 'flex';
     }
-</script>
-<script>
-    // --- UPDATED SYSTEM MATRIX ENGINE: Now fetches directly from MockAPI ---
+
     async function buildProgressAndHistoryViews() {
         try {
-            console.log('🔄 Fetching from MockAPI:', MOCKAPI_URL);
-            console.log('📍 Current user branch:', activeUser.branch);
-            
-            // Fetch all submissions directly from MockAPI
             const response = await fetch(MOCKAPI_URL);
             if (!response.ok) {
                 throw new Error(`MockAPI error: ${response.status}`);
             }
             
             const allSubmissions = await response.json();
-            console.log('✅ MockAPI Response:', allSubmissions);
-            console.log('📊 Total records:', allSubmissions.length);
-            
             const branchRecords = allSubmissions.filter(d => d.branch === activeUser.branch);
-            console.log('🏢 Branch records:', branchRecords.length);
-            console.log('📄 Sample record:', branchRecords[0]);
             
-            // Dynamic lookup year parameter extracted straight from user interface toggle dropdown menu element
             const matrixYearSelector = document.getElementById('matrixYearSelector');
             const selectedMatrixYear = matrixYearSelector ? matrixYearSelector.value : "2026";
-            console.log('📅 Selected Matrix Year:', selectedMatrixYear);
-            console.log('📅 Year in data:', branchRecords[0]?.year, '| Type:', typeof branchRecords[0]?.year);
 
+            // Update matrix
             const matrixContainer = document.getElementById('progressIndicatorGrid');
             if (matrixContainer) {
                 matrixContainer.innerHTML = `
@@ -463,14 +524,7 @@
                         const cell = document.createElement('div');
                         cell.className = "matrix-cell";
                         
-                        // Match submissions filtered by category, quarter, and the explicitly selected Matrix year
                         const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && String(r.year) === String(selectedMatrixYear));
-                        
-                        // Debug first row only
-                        if (type === documentTypesArray[0] && q === "1st Quarter") {
-                            console.log('🔍 Matching:', {type, quarter: q, year: selectedMatrixYear});
-                            console.log('   Record found:', matchedRecord);
-                        }
                         
                         if (matchedRecord) {
                             let badgeClass = "p-pending";
@@ -486,34 +540,37 @@
                 });
             }
 
+            // Update history table
             const historyBody = document.getElementById('historyTableBody');
             if (historyBody) {
                 historyBody.innerHTML = '';
 
                 if (branchRecords.length === 0) {
-                    historyBody.innerHTML = `<tr><td colspan="5" class="no-data">No history items logged for this branch session.</td></tr>`;
+                    historyBody.innerHTML = `<tr><td colspan="6" class="no-data">No history items logged for this branch.</td></tr>`;
                     return;
                 }
 
-                branchRecords.sort((a, b) => b.uploadedDate.localeCompare(a.uploadedDate));
+                branchRecords.sort((a, b) => new Date(b.uploadedDate) - new Date(a.uploadedDate));
 
                 branchRecords.forEach(rec => {
+                    const driveLink = rec.driveFileUrl ? `<a href="${rec.driveFileUrl}" target="_blank" style="color:#00008F; text-decoration:underline;">View in Drive</a>` : 'N/A';
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>${rec.docType}</strong></td>
-                        <td>${rec.docName}</td>
-                        <td>${rec.quarter}</td>
-                        <td>${rec.year}</td>
-                        <td><code>${rec.uploadedDate}</code></td>
+                        <td><strong>${rec.docType || 'N/A'}</strong></td>
+                        <td>${rec.docName || 'N/A'}</td>
+                        <td>${rec.quarter || 'N/A'}</td>
+                        <td>${rec.year || 'N/A'}</td>
+                        <td><code>${rec.uploadedDate || 'N/A'}</code></td>
+                        <td>${driveLink}</td>
                     `;
                     historyBody.appendChild(tr);
                 });
             }
         } catch (error) {
-            console.error('❌ Error fetching from MockAPI:', error);
+            console.error('❌ Error fetching data:', error);
             const historyBody = document.getElementById('historyTableBody');
             if (historyBody) {
-                historyBody.innerHTML = `<tr><td colspan="5" class="no-data">Error loading data: ${error.message}</td></tr>`;
+                historyBody.innerHTML = `<tr><td colspan="6" class="no-data">Error loading data: ${error.message}</td></tr>`;
             }
         }
     }
@@ -526,18 +583,16 @@
         }
         
         activeUser = JSON.parse(userString);
-        console.log('👤 Active User loaded:', activeUser);
         
         const cleanName = activeUser.email.split('@')[0];
-        
         document.getElementById('navProfileName').textContent = cleanName;
         document.getElementById('navProfileBranch').textContent = `${activeUser.region} - ${activeUser.branch} Branch`;
         document.getElementById('avatarCircle').textContent = cleanName.charAt(0).toUpperCase();
 
-        // 1. SETUP DYNAMIC DROP-DOWN OPTIONS (BOTH MATRIX AND FORM FIELDS)
+        // Setup year dropdowns
         const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
-        const currentYear = phTime.getFullYear(); // Derived explicitly as 2026
-        const nextYear = currentYear + 1;         // Derived explicitly as 2027
+        const currentYear = phTime.getFullYear();
+        const nextYear = currentYear + 1;
 
         const yearSelect = document.getElementById('year');
         if (yearSelect) {
@@ -555,10 +610,9 @@
             `;
         }
 
-        // 2. PROCESS EDIT-MODE CONFIGURATIONS
+        // Check edit mode
         editTargetId = localStorage.getItem('editTargetId');
         if (editTargetId) {
-            // Fetch from MockAPI for edit mode
             const allSubmissions = await (await fetch(MOCKAPI_URL)).json();
             const recordToEdit = allSubmissions.find(d => d.submissionId === editTargetId);
             
@@ -576,24 +630,12 @@
                 document.getElementById('expirationDate').value = recordToEdit.expirationDate;
                 document.getElementById('remarks').value = recordToEdit.remarks;
                 
-                // Synchronize tracker matrix layout to reflect document filing context target year automatically
                 if (matrixYearSelector) matrixYearSelector.value = recordToEdit.year;
-
-                const currentFileField = document.getElementById('fileCurrentValue');
-                if (currentFileField) {
-                    currentFileField.innerHTML = `Linked Attachment Asset: 📁 <code>${recordToEdit.fileName}</code> (Leave blank to keep original file structure)`;
-                    currentFileField.style.display = "block";
-                }
             }
-        } else {
-            const fileInput = document.getElementById('fileUpload');
-            if (fileInput) fileInput.required = true;
         }
 
-        // 3. BUILD SYSTEM LOG VIEWS
-        console.log('📋 Calling buildProgressAndHistoryViews...');
+        // Build views
         await buildProgressAndHistoryViews();
-        console.log('✨ Page fully loaded');
     });
 </script>
 </html>
