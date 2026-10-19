@@ -262,6 +262,23 @@
     let activeFieldSort = "docType"; 
     let globalActiveIndex = null;
     const MOCKAPI_URL = "https://6ad258cd66cd28aed82dea43.mockapi.io/submissions";
+    // Open a file stored inside a MockAPI record (base64) in a new tab
+    async function openStoredFile(recordId) {
+        try {
+            const res = await fetch(`${MOCKAPI_URL}/${recordId}`);
+            const rec = await res.json();
+            if (!rec.fileData) { alert('No file stored for this record.'); return; }
+            const [meta, b64] = rec.fileData.split(',');
+            const mime = (meta.match(/data:(.*?);base64/) || [])[1] || 'application/octet-stream';
+            const bytes = atob(b64);
+            const arr = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+            window.open(URL.createObjectURL(new Blob([arr], { type: mime })), '_blank');
+        } catch (err) {
+            alert('Could not open file: ' + err.message);
+        }
+    }
+
 
     function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
 
@@ -430,10 +447,10 @@
                 `;
             }
 
-            // Create clickable file link to Google Drive
+            // Create clickable file link
             let fileCell = '📁 <code style="color: #999;">No file</code>';
-            if (doc.driveFileUrl) {
-                fileCell = `<a href="${doc.driveFileUrl}" target="_blank" title="Open in Google Drive" style="color: #00008F; text-decoration: none; cursor: pointer; font-weight: 600;">
+            if (doc.fileData) {
+                fileCell = `<a href="#" onclick="openStoredFile('${doc.id}'); return false;" title="Open file" style="color: #00008F; text-decoration: none; cursor: pointer; font-weight: 600;">
                     📁 <code style="color: #00008F; text-decoration: underline;">${doc.fileName || 'View File'}</code>
                 </a>`;
             }
