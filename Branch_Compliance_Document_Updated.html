@@ -311,7 +311,7 @@
     const GITHUB_BRANCH = "main";
     const GITHUB_FOLDER = "submissions-files";
     // Token (write access: fine-grained token, ONLY this repo, Contents = Read and write)
-    const GITHUB_TOKEN  = "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";
+    const GITHUB_TOKEN  = "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";
 
     function githubUrl(path) {
         return `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
