@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIOSH - Corporate Admin Dashboard</title>
+    <title>AYOSH - Corporate Admin Dashboard</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         body { background-color: #f4f6f9; color: #333333; min-height: 100vh; display: flex; flex-direction: column; }
@@ -11,8 +11,8 @@
         /* --- Header Navigation Banner --- */
         .navbar { background-color: #ffffff; border-bottom: 3px solid #FF0000; height: 70px; display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
         .nav-left { display: flex; align-items: center; gap: 15px; }
-        .aiosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
-        .aiosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
+        .ayosh-logo-text { font-size: 24px; font-weight: 900; color: #00008F; letter-spacing: 1px; line-height: 1; }
+        .ayosh-tagline { font-size: 10px; color: #666666; text-transform: uppercase; margin-top: 2px; }
         .nav-right { display: flex; align-items: center; gap: 25px; position: relative; }
         
         /* --- Notification Bell & Dropdown Layout --- */
@@ -124,9 +124,9 @@
     <!-- --- Header Navigation Area --- -->
     <header class="navbar">
         <div class="nav-left">
-            <div class="aiosh-logo-container">
-                <span class="aiosh-logo-text">AIOSH</span>
-                <span class="aiosh-tagline">Corporate Administration Hub</span>
+            <div class="ayosh-logo-container">
+                <span class="ayosh-logo-text">AYOSH</span>
+                <span class="ayosh-tagline">Corporate Administration Hub</span>
             </div>
         </div>
         <div class="nav-right">
@@ -378,7 +378,7 @@
         panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
         
         document.getElementById('notifCountBadge').style.display = 'none';
-        localStorage.setItem('aiosh_admin_notif_seen', 'true');
+        localStorage.setItem('ayosh_admin_notif_seen', 'true');
     }
 
     document.addEventListener('click', function() {
@@ -425,7 +425,7 @@
         const badge = document.getElementById('notifCountBadge');
         const container = document.getElementById('notifPanelContents');
         const pendingItems = submissions.filter(d => d.status === "pending");
-        const alreadySeen = localStorage.getItem('aiosh_admin_notif_seen') === 'true';
+        const alreadySeen = localStorage.getItem('ayosh_admin_notif_seen') === 'true';
 
         if(pendingItems.length > 0) {
             if (!alreadySeen) {
@@ -589,7 +589,7 @@
         }
 
         closeReviewModal();
-        localStorage.removeItem('aiosh_admin_notif_seen');
+        localStorage.removeItem('ayosh_admin_notif_seen');
         processMasterStateEngine();
     }
 
