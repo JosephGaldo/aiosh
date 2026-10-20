@@ -560,6 +560,47 @@
     document.getElementById('riskCountRed').textContent = redRiskTotal;
     document.getElementById('riskBarRed').style.width = computedRedBarPercentage + "%";
 }
+
+    // === VIEW COGNITO FORMS FILE FUNCTION ===
+    async function viewCognitoFile(formId, entryId, docName) {
+        try {
+            console.log('📂 Fetching entry:', formId, entryId);
+
+            // Note: Bearer token needs to be added here
+            const COGNITO_BEARER_TOKEN = "REPLACE_WITH_YOUR_BEARER_TOKEN"; // ⭐ Same token as form submission
+
+            const response = await fetch(`https://www.cognitoforms.com/api/forms/${formId}/entries/${entryId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + COGNITO_BEARER_TOKEN
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch entry: ${response.statusText}`);
+            }
+
+            const entryData = await response.json();
+            console.log('✅ Entry data:', entryData);
+
+            // Extract file URL from Submissions
+            if (entryData.Submissions && entryData.Submissions.length > 0) {
+                const fileUrl = entryData.Submissions[0].File;
+                if (fileUrl) {
+                    console.log('📄 Opening file:', fileUrl);
+                    window.open(fileUrl, '_blank');
+                } else {
+                    alert('❌ File URL not found in submission');
+                }
+            } else {
+                alert('❌ No file attached to this entry');
+            }
+        } catch (error) {
+            console.error('❌ Error fetching file:', error);
+            alert('❌ Failed to load file. Please try again.');
+        }
+    }
+
     // --- Block 2 of Part 6 (Paste this directly below Block 1 to complete the file) ---
     function openReviewModal(submissionId, docName, branch) {
         reviewTargetSubmissionId = submissionId;
@@ -654,7 +695,9 @@
                 <td><span style="color: #666666; font-weight: 700; text-transform: uppercase; font-size: 11px;">${doc.region || '-'}</span></td>
                 <td><strong>${doc.branch}</strong></td>
                 <td>${doc.docType}</td>
-                <td>${doc.docName}</td>
+                <td>
+                    ${doc.cognitoEntryId ? `<a href="#" onclick="viewCognitoFile(${doc.cognitoFormId}, ${doc.cognitoEntryId}, '${doc.docName}'); return false;" style="color: #00008F; text-decoration: underline; font-weight: 600; cursor: pointer;">📄 ${doc.docName}</a>` : `<strong>${doc.docName}</strong>`}
+                </td>
                 <td>${doc.quarter}</td>
                 <td>${doc.year}</td>
                 <td>📁 <code>${doc.fileName}</code></td>
