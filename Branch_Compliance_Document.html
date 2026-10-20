@@ -300,7 +300,15 @@
 
     async function processFormSubmission(event) {
         event.preventDefault();
-        
+
+        // Disable submit button to prevent multiple submissions during processing
+        const submitBtn = document.getElementById('submitActionBtn');
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = editTargetId ? '⏳ Updating...' : '⏳ Submitting...';
+        submitBtn.style.opacity = '0.6';
+        submitBtn.style.cursor = 'not-allowed';
+
         const fileInput = document.getElementById('fileUpload');
         const fileErrorMsg = document.getElementById('fileErrorMsg');
         let targetFileName = "";
@@ -315,6 +323,10 @@
             
             if (!validExtensions.includes(fileExtension)) {
                 fileErrorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
                 return;
             }
             fileErrorMsg.style.display = 'none';
@@ -326,6 +338,10 @@
             targetFileName = previousRecord ? previousRecord.fileName : "attachment.pdf";
         } else {
             fileErrorMsg.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
             return;
         }
 
@@ -353,6 +369,10 @@
                         You can only submit a new entry after the expiration date. For now, you may only edit the existing pending or declined entries.
                     `;
                     document.getElementById('alertModal').style.display = 'flex';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
                     return;
                 }
             }
@@ -411,6 +431,12 @@
 
         // *** FIXED: Refresh data from MockAPI and update display ***
         await buildProgressAndHistoryViews();
+
+        // Re-enable submit button after successful submission
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
 
         document.getElementById('alertModalBody').innerHTML = `<strong>SUCCESS: Document submitted to compliance cloud!</strong>`;
         document.getElementById('alertModal').style.display = 'flex';
@@ -578,6 +604,7 @@
                 <option value="${currentYear}">${currentYear}</option>
                 <option value="${nextYear}">${nextYear}</option>
             `;
+            yearSelect.value = currentYear;  // Default to current year (2026)
         }
 
         const matrixYearSelector = document.getElementById('matrixYearSelector');
@@ -587,6 +614,7 @@
                 <option value="${currentYear}">${currentYear}</option>
                 <option value="${nextYear}">${nextYear}</option>
             `;
+            matrixYearSelector.value = currentYear;  // Default to current year (2026)
         }
 
         // 2. PROCESS EDIT-MODE CONFIGURATIONS
