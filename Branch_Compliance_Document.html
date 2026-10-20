@@ -357,10 +357,15 @@
 
             if (existingRecordsOfType.length > 0) {
                 const existingRecord = existingRecordsOfType[0];
-                const expirationDate = new Date(existingRecord.expirationDate);
-                const today = new Date();
+                // Parse expiration date correctly (YYYY-MM-DD format)
+                const [expYear, expMonth, expDay] = existingRecord.expirationDate.split('-');
+                const expirationDate = new Date(expYear, expMonth - 1, expDay);
+                expirationDate.setHours(23, 59, 59, 999); // Set to end of day
 
-                if (today < expirationDate) {
+                const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+                const today = new Date(phTime.getFullYear(), phTime.getMonth(), phTime.getDate());
+
+                if (today <= expirationDate) {
                     // Document still valid - block submission
                     const expDateStr = expirationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
                     const statusLabel = existingRecord.status === "approved" ? "approved and valid" : "pending approval";
