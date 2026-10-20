@@ -346,26 +346,27 @@
         }
 
         // *** FIX #3: DOCUMENT SUBMISSION BLOCKING LOGIC ***
-        // Block new submissions if a document type already has approved status and hasn't expired
+        // Block new submissions if a document type already has approved or pending status and hasn't expired
         if (!editTargetId) {
             const selectedDocType = document.getElementById('docType').value;
-            const approvedRecordsOfType = allSubmissions.filter(d =>
+            const existingRecordsOfType = allSubmissions.filter(d =>
                 d.branch === activeUser.branch &&
                 d.docType === selectedDocType &&
-                d.status === "approved"
+                (d.status === "approved" || d.status === "pending")
             );
 
-            if (approvedRecordsOfType.length > 0) {
-                const approvedRecord = approvedRecordsOfType[0];
-                const expirationDate = new Date(approvedRecord.expirationDate);
+            if (existingRecordsOfType.length > 0) {
+                const existingRecord = existingRecordsOfType[0];
+                const expirationDate = new Date(existingRecord.expirationDate);
                 const today = new Date();
 
                 if (today < expirationDate) {
                     // Document still valid - block submission
                     const expDateStr = expirationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    const statusLabel = existingRecord.status === "approved" ? "approved and valid" : "pending approval";
                     document.getElementById('alertModalBody').innerHTML = `
                         <strong style="color: #c92a2a;">❌ SUBMISSION BLOCKED</strong><br><br>
-                        A <strong>${selectedDocType}</strong> document is already approved and valid until <strong>${expDateStr}</strong>.<br><br>
+                        A <strong>${selectedDocType}</strong> document is already ${statusLabel} until <strong>${expDateStr}</strong>.<br><br>
                         You can only submit a new entry after the expiration date. For now, you may only edit the existing pending or declined entries.
                     `;
                     document.getElementById('alertModal').style.display = 'flex';
