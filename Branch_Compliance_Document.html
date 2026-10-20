@@ -329,6 +329,35 @@
             return;
         }
 
+        // *** FIX #3: DOCUMENT SUBMISSION BLOCKING LOGIC ***
+        // Block new submissions if a document type already has approved status and hasn't expired
+        if (!editTargetId) {
+            const selectedDocType = document.getElementById('docType').value;
+            const approvedRecordsOfType = allSubmissions.filter(d =>
+                d.branch === activeUser.branch &&
+                d.docType === selectedDocType &&
+                d.status === "approved"
+            );
+
+            if (approvedRecordsOfType.length > 0) {
+                const approvedRecord = approvedRecordsOfType[0];
+                const expirationDate = new Date(approvedRecord.expirationDate);
+                const today = new Date();
+
+                if (today < expirationDate) {
+                    // Document still valid - block submission
+                    const expDateStr = expirationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    document.getElementById('alertModalBody').innerHTML = `
+                        <strong style="color: #c92a2a;">❌ SUBMISSION BLOCKED</strong><br><br>
+                        A <strong>${selectedDocType}</strong> document is already approved and valid until <strong>${expDateStr}</strong>.<br><br>
+                        You can only submit a new entry after the expiration date. For now, you may only edit the existing pending or declined entries.
+                    `;
+                    document.getElementById('alertModal').style.display = 'flex';
+                    return;
+                }
+            }
+        }
+
         const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
         const formatUploadedDate = phTime.toISOString().split('T')[0];
 
@@ -435,21 +464,50 @@
                     quartersLookup.forEach(q => {
                         const cell = document.createElement('div');
                         cell.className = "matrix-cell";
-                        
-                        // Match submissions filtered by category, quarter, and the explicitly selected Matrix year
-                        const matchedRecord = branchRecords.find(r => r.docType === type && r.quarter === q && String(r.year) === String(selectedMatrixYear));
-                        
+
+                        // Helper: Get quarter number from quarter name
+                        const getQuarterNum = (qName) => quartersLookup.indexOf(qName) + 1;
+
+                        // Helper: Check if a matrix quarter/year is within document's validity period
+                        const isWithinValidity = (record, matrixYear, matrixQuarter) => {
+                            const submissionYear = parseInt(record.year);
+                            const submissionQuarterNum = getQuarterNum(record.quarter);
+                            const expirationDate = new Date(record.expirationDate);
+                            const expYear = expirationDate.getFullYear();
+
+                            // Determine which quarter the expiration date falls into
+                            const expMonth = expirationDate.getMonth() + 1; // 1-12
+                            let expQuarterNum;
+                            if (expMonth <= 3) expQuarterNum = 1;
+                            else if (expMonth <= 6) expQuarterNum = 2;
+                            else if (expMonth <= 9) expQuarterNum = 3;
+                            else expQuarterNum = 4;
+
+                            const matrixYearNum = parseInt(matrixYear);
+                            const matrixQuarterNum = getQuarterNum(matrixQuarter);
+
+                            // Convert to absolute quarter numbers for comparison
+                            const subAbsolute = submissionYear * 4 + submissionQuarterNum;
+                            const expAbsolute = expYear * 4 + expQuarterNum;
+                            const matrixAbsolute = matrixYearNum * 4 + matrixQuarterNum;
+
+                            return matrixAbsolute >= subAbsolute && matrixAbsolute <= expAbsolute;
+                        };
+
+                        // Find records of this document type and check if they cover this quarter/year
+                        const matchedRecord = branchRecords.find(r => r.docType === type && isWithinValidity(r, selectedMatrixYear, q));
+
                         // Debug first row only
                         if (type === documentTypesArray[0] && q === "1st Quarter") {
                             console.log('🔍 Matching:', {type, quarter: q, year: selectedMatrixYear});
                             console.log('   Record found:', matchedRecord);
                         }
-                        
+
                         if (matchedRecord) {
                             let badgeClass = "p-pending";
                             if (matchedRecord.status === "approved") badgeClass = "p-approved";
                             if (matchedRecord.status === "declined") badgeClass = "p-declined";
-                            
+
                             cell.innerHTML = `<span class="prog-badge ${badgeClass}">${matchedRecord.status || 'pending'}</span>`;
                         } else {
                             cell.innerHTML = `<span class="prog-badge p-missing">Missing</span>`;
@@ -510,11 +568,13 @@
         // 1. SETUP DYNAMIC DROP-DOWN OPTIONS (BOTH MATRIX AND FORM FIELDS)
         const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
         const currentYear = phTime.getFullYear(); // Derived explicitly as 2026
+        const previousYear = currentYear - 1;      // Derived explicitly as 2025
         const nextYear = currentYear + 1;         // Derived explicitly as 2027
 
         const yearSelect = document.getElementById('year');
         if (yearSelect) {
             yearSelect.innerHTML = `
+                <option value="${previousYear}">${previousYear}</option>
                 <option value="${currentYear}">${currentYear}</option>
                 <option value="${nextYear}">${nextYear}</option>
             `;
@@ -523,6 +583,7 @@
         const matrixYearSelector = document.getElementById('matrixYearSelector');
         if (matrixYearSelector) {
             matrixYearSelector.innerHTML = `
+                <option value="${previousYear}">${previousYear}</option>
                 <option value="${currentYear}">${currentYear}</option>
                 <option value="${nextYear}">${nextYear}</option>
             `;
