@@ -290,15 +290,20 @@
             const fileData = await uploadResponse.json();
             console.log('✅ File uploaded:', fileData);
 
-            // STEP 2: Create entry with file data
+            // STEP 2: Create entry with file data (wrap in Submissions array)
             console.log('📝 Step 2: Creating entry in Cognito Forms...');
+            const entryPayload = {
+                Submissions: [fileData]
+            };
+            console.log('📋 Entry payload:', entryPayload);
+
             const entryResponse = await fetch(`https://www.cognitoforms.com/api/forms/${COGNITO_FORM_ID}/entries`, {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + COGNITO_BEARER_TOKEN,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(fileData)
+                body: JSON.stringify(entryPayload)
             });
 
             if (!entryResponse.ok) {
