@@ -352,10 +352,9 @@
                 alertItemsHtml += `
                     <div class="alert-banner-card ${severityClass}">
                         <div>
-                            <strong>${alertBadgeLabel}:</strong> Your document 
+                            <strong>${alertBadgeLabel}:</strong> Your document
                             <u>${doc.docName}</u> (${doc.docType})${statusLabelText} is nearing expiration [${timeDescriptor}, Target: ${doc.expirationDate}].
                         </div>
-                        <button class="alert-renew-shortcut-btn" onclick="triggerDirectRenewal('${doc.submissionId}')">⚡ Renew File</button>
                     </div>
                 `;
             }
