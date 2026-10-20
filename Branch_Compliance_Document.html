@@ -262,6 +262,67 @@
         "Mayor's Permit", "Occupancy Permit", "Contract of Lease"
     ];
 
+    // === COGNITO FORMS CONFIGURATION ===
+    const COGNITO_FORM_ID = 101;
+    const COGNITO_BEARER_TOKEN = "REPLACE_WITH_YOUR_BEARER_TOKEN"; // ⭐ UPDATE THIS with your token
+    const COGNITO_API_URL = "https://www.cognitoforms.com/api/files";
+
+    // === COGNITO FORMS: UPLOAD FILE + CREATE ENTRY ===
+    async function uploadToCognitoForms(file) {
+        try {
+            // STEP 1: Upload file to /api/files
+            console.log('📤 Step 1: Uploading file to Cognito Forms...');
+            const formData = new FormData();
+            formData.append('File', file);
+
+            const uploadResponse = await fetch(COGNITO_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + COGNITO_BEARER_TOKEN
+                },
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error(`File upload failed: ${uploadResponse.statusText}`);
+            }
+
+            const fileData = await uploadResponse.json();
+            console.log('✅ File uploaded:', fileData);
+
+            // STEP 2: Create entry with file data
+            console.log('📝 Step 2: Creating entry in Cognito Forms...');
+            const entryResponse = await fetch(`https://www.cognitoforms.com/api/forms/${COGNITO_FORM_ID}/entries`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + COGNITO_BEARER_TOKEN,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(fileData)
+            });
+
+            if (!entryResponse.ok) {
+                throw new Error(`Entry creation failed: ${entryResponse.statusText}`);
+            }
+
+            const entryData = await entryResponse.json();
+            console.log('✅ Entry created:', entryData);
+
+            // Store entry info for later use
+            window.cognitoFormId = COGNITO_FORM_ID;
+            window.cognitoEntryId = entryData.Entry?.Number || entryData.Number || '';
+
+            return {
+                formId: COGNITO_FORM_ID,
+                entryId: window.cognitoEntryId,
+                fileName: fileData.Name || file.name
+            };
+        } catch (error) {
+            console.error('❌ Cognito Forms error:', error);
+            throw error;
+        }
+    }
+
     function clearEditContext() { localStorage.removeItem('editTargetId'); }
     function dismissAlertAndRedirect() {
         clearEditContext();
@@ -320,7 +381,7 @@
             const uploadedFile = fileInput.files[0];
             const fileExtension = uploadedFile.name.split('.').pop().toLowerCase();
             const validExtensions = ['jpeg', 'png', 'jpg', 'pdf'];
-            
+
             if (!validExtensions.includes(fileExtension)) {
                 fileErrorMsg.style.display = 'block';
                 submitBtn.disabled = false;
@@ -330,6 +391,24 @@
                 return;
             }
             fileErrorMsg.style.display = 'none';
+
+            // *** NEW: Upload file to Cognito Forms ***
+            try {
+                console.log('📤 Uploading to Cognito Forms...');
+                const cognitoResult = await uploadToCognitoForms(uploadedFile);
+                console.log('✅ Cognito Forms upload successful:', cognitoResult);
+                window.cognitoFileData = cognitoResult; // Store for later use
+            } catch (error) {
+                console.error('❌ Cognito Forms upload failed:', error);
+                fileErrorMsg.style.display = 'block';
+                fileErrorMsg.innerHTML = '❌ File upload to cloud storage failed. Please try again.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalBtnText;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+                return;
+            }
+
             const docTypeStub = document.getElementById('docType').value.replace(/[^a-zA-Z0-9]/g, "_");
             const inputYear = document.getElementById('year').value;
             targetFileName = `${docTypeStub}_${inputYear}.${fileExtension}`;
@@ -407,7 +486,9 @@
                     remarks: document.getElementById('remarks').value,
                     fileName: targetFileName,
                     uploadedDate: formatUploadedDate,
-                    status: "pending"
+                    status: "pending",
+                    cognitoFormId: window.cognitoFileData?.formId || recordToEdit.cognitoFormId || '',
+                    cognitoEntryId: window.cognitoFileData?.entryId || recordToEdit.cognitoEntryId || ''
                 };
             }
         } else {
@@ -425,7 +506,9 @@
                 fileName: targetFileName,
                 uploadedDate: formatUploadedDate,
                 status: "pending",
-                adminRemarks: ""
+                adminRemarks: "",
+                cognitoFormId: window.cognitoFileData?.formId || '',
+                cognitoEntryId: window.cognitoFileData?.entryId || ''
             };
         }
 
