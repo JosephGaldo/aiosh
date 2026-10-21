@@ -432,6 +432,11 @@
         // *** FIX #3: DOCUMENT SUBMISSION BLOCKING LOGIC (QUARTER-AWARE) ***
         // Block only if new submission's quarter/year overlaps with existing valid submission
         if (!editTargetId) {
+            // REFETCH submissions to ensure we have latest data (avoid race conditions)
+            const refreshRes = await fetch(MOCKAPI_URL);
+            allSubmissions = await refreshRes.json();
+            console.log('🔄 Refreshed submissions for blocking check:', allSubmissions.length, 'records');
+
             const selectedDocType = document.getElementById('docType').value;
             const selectedQuarter = document.getElementById('quarter').value;
             const selectedYear = parseInt(document.getElementById('year').value);
@@ -452,6 +457,11 @@
 
             // Check if any existing record overlaps with the new submission
             for (let existingRecord of existingRecordsOfType) {
+                // ONLY BLOCK FOR APPROVED & PENDING (skip DECLINED - allows new submissions)
+                if (existingRecord.status === "declined") {
+                    continue;
+                }
+
                 // Parse submission quarter/year
                 const existingQuarterNum = getQuarterNum(existingRecord.quarter);
                 const existingYear = parseInt(existingRecord.year);
@@ -478,14 +488,14 @@
                 if (newSubmissionAbsolute >= existingSubmittedAbsolute && newSubmissionAbsolute <= expirationAbsolute) {
                     // Overlap detected - block submission
                     const expDateStr = expirationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    const statusLabel = existingRecord.status === "approved" ? "approved" : "pending approval";
+                    const statusLabel = existingRecord.status === "approved" ? "APPROVED" : "PENDING";
                     const submittedQuarterYear = `${existingRecord.quarter} ${existingRecord.year}`;
 
                     document.getElementById('alertModalBody').innerHTML = `
                         <strong style="color: #c92a2a;">❌ SUBMISSION BLOCKED</strong><br><br>
-                        A <strong>${selectedDocType}</strong> document is already ${statusLabel}
-                        (${submittedQuarterYear}) until <strong>${expDateStr}</strong>.<br><br>
-                        You cannot submit for <strong>${selectedQuarter} ${selectedYear}</strong> because it overlaps with the validity period above.<br><br>
+                        A <strong>${selectedDocType}</strong> document with <strong>${statusLabel}</strong> status
+                        (${submittedQuarterYear}) is valid until <strong>${expDateStr}</strong>.<br><br>
+                        You cannot submit for overlapping quarters while this document is ${statusLabel.toLowerCase()}.<br><br>
                         You can only submit a new entry after <strong>${expDateStr}</strong>.
                     `;
                     document.getElementById('alertModal').style.display = 'flex';
@@ -761,7 +771,27 @@
                 document.getElementById('dateIssued').value = recordToEdit.dateIssued;
                 document.getElementById('expirationDate').value = recordToEdit.expirationDate;
                 document.getElementById('remarks').value = recordToEdit.remarks;
-                
+
+                // *** LOCK EDITING FOR APPROVED SUBMISSIONS ONLY ***
+                if (recordToEdit.status === "approved") {
+                    // Disable all form inputs
+                    const formInputs = document.querySelectorAll('#complianceForm input, #complianceForm select, #complianceForm textarea');
+                    formInputs.forEach(input => {
+                        input.disabled = true;
+                        input.style.opacity = '0.6';
+                        input.style.cursor = 'not-allowed';
+                    });
+
+                    // Hide submit button and show locked message
+                    const submitBtn = document.getElementById('submitActionBtn');
+                    submitBtn.style.display = 'none';
+
+                    const editIndicator = document.getElementById('editModeIndicator');
+                    editIndicator.textContent = `🔒 LOCKED - Status: APPROVED`;
+                    editIndicator.style.background = '#fff5f5';
+                    editIndicator.style.color = '#c92a2a';
+                }
+
                 // Synchronize tracker matrix layout to reflect document filing context target year automatically
                 if (matrixYearSelector) matrixYearSelector.value = recordToEdit.year;
 
