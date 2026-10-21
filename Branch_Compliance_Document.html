@@ -264,7 +264,7 @@
 
     // === COGNITO FORMS CONFIGURATION ===
     const COGNITO_FORM_ID = 101;
-    const COGNITO_BEARER_TOKEN = "eyJhbGciOiJIUzI1NiIsImtpZCI6Ijg4YmYzNWNmLWM3ODEtNDQ3ZC1hYzc5LWMyODczMjNkNzg3ZCIsInR5cCI6IkpXVCJ9.eyJvcmdhbml6YXRpb25JZCI6Ijc1MzExYjUwLTcwOTctNDA3ZC1iMzMzLTU4OTIzMzY4OTFhOCIsImludGVncmF0aW9uSWQiOiJhMWM2OGEwNi01NWQ1LTRjMmEtOTE2ZC01MWIyOWQ5YmQzNjIiLCJjbGllbnRJZCI6IjNkZTNmODMwLWNiYzctNDZlNi1iOTZlLTVmMDE2NzcyMTgzMCIsImp0aSI6ImVhMmJhODNiLWY0MjItNDFlZS1iMGQzLTdjYjYwMjQwNDNkNiIsImlhdCI6MTc5MjUwMzM4OSwiaXNzIjoiaHR0cHM6Ly93d3cuY29nbml0b2Zvcm1zLmNvbS8iLCJhdWQiOiJhcGkifQ._2NESkALovTEsv9IdO9CU_Q86drp5ENoVWFKmQ7eibg"; // ⭐ UPDATE THIS with your token
+    const COGNITO_BEARER_TOKEN = "REPLACE_WITH_YOUR_BEARER_TOKEN"; // ⭐ UPDATE THIS with your token
     const COGNITO_API_URL = "https://www.cognitoforms.com/api/files";
 
     // === COGNITO FORMS: UPLOAD FILE + CREATE ENTRY ===
@@ -429,34 +429,64 @@
             return;
         }
 
-        // *** FIX #3: DOCUMENT SUBMISSION BLOCKING LOGIC ***
-        // Block new submissions if a document type already has approved or pending status and hasn't expired
+        // *** FIX #3: DOCUMENT SUBMISSION BLOCKING LOGIC (QUARTER-AWARE) ***
+        // Block only if new submission's quarter/year overlaps with existing valid submission
         if (!editTargetId) {
             const selectedDocType = document.getElementById('docType').value;
+            const selectedQuarter = document.getElementById('quarter').value;
+            const selectedYear = parseInt(document.getElementById('year').value);
+
+            // Helper: Convert quarter name to quarter number (1-4)
+            const getQuarterNum = (qName) => {
+                const quarters = ["1st Quarter", "2nd Quarter", "3rd Quarter", "4th Quarter"];
+                return quarters.indexOf(qName) + 1;
+            };
+
+            const selectedQuarterNum = getQuarterNum(selectedQuarter);
+
             const existingRecordsOfType = allSubmissions.filter(d =>
                 d.branch === activeUser.branch &&
                 d.docType === selectedDocType &&
                 (d.status === "approved" || d.status === "pending")
             );
 
-            if (existingRecordsOfType.length > 0) {
-                const existingRecord = existingRecordsOfType[0];
-                // Parse expiration date correctly (YYYY-MM-DD format)
+            // Check if any existing record overlaps with the new submission
+            for (let existingRecord of existingRecordsOfType) {
+                // Parse submission quarter/year
+                const existingQuarterNum = getQuarterNum(existingRecord.quarter);
+                const existingYear = parseInt(existingRecord.year);
+
+                // Parse expiration date
                 const [expYear, expMonth, expDay] = existingRecord.expirationDate.split('-');
                 const expirationDate = new Date(expYear, expMonth - 1, expDay);
-                expirationDate.setHours(23, 59, 59, 999); // Set to end of day
 
-                const phTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Manila"}));
-                const today = new Date(phTime.getFullYear(), phTime.getMonth(), phTime.getDate());
+                // Determine which quarter the expiration date falls into
+                const expMonthNum = parseInt(expMonth);
+                let expQuarterNum;
+                if (expMonthNum <= 3) expQuarterNum = 1;
+                else if (expMonthNum <= 6) expQuarterNum = 2;
+                else if (expMonthNum <= 9) expQuarterNum = 3;
+                else expQuarterNum = 4;
+                const expYearNum = parseInt(expYear);
 
-                if (today <= expirationDate) {
-                    // Document still valid - block submission
+                // Convert to absolute quarter numbers for easy comparison
+                const existingSubmittedAbsolute = existingYear * 4 + existingQuarterNum;
+                const expirationAbsolute = expYearNum * 4 + expQuarterNum;
+                const newSubmissionAbsolute = selectedYear * 4 + selectedQuarterNum;
+
+                // Check if new submission falls within the validity period
+                if (newSubmissionAbsolute >= existingSubmittedAbsolute && newSubmissionAbsolute <= expirationAbsolute) {
+                    // Overlap detected - block submission
                     const expDateStr = expirationDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-                    const statusLabel = existingRecord.status === "approved" ? "approved and valid" : "pending approval";
+                    const statusLabel = existingRecord.status === "approved" ? "approved" : "pending approval";
+                    const submittedQuarterYear = `${existingRecord.quarter} ${existingRecord.year}`;
+
                     document.getElementById('alertModalBody').innerHTML = `
                         <strong style="color: #c92a2a;">❌ SUBMISSION BLOCKED</strong><br><br>
-                        A <strong>${selectedDocType}</strong> document is already ${statusLabel} until <strong>${expDateStr}</strong>.<br><br>
-                        You can only submit a new entry after the expiration date. For now, you may only edit the existing pending or declined entries.
+                        A <strong>${selectedDocType}</strong> document is already ${statusLabel}
+                        (${submittedQuarterYear}) until <strong>${expDateStr}</strong>.<br><br>
+                        You cannot submit for <strong>${selectedQuarter} ${selectedYear}</strong> because it overlaps with the validity period above.<br><br>
+                        You can only submit a new entry after <strong>${expDateStr}</strong>.
                     `;
                     document.getElementById('alertModal').style.display = 'flex';
                     submitBtn.disabled = false;
